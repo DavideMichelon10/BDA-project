@@ -1,0 +1,43 @@
+---
+title: "BDA - Project"
+author: "Anonymous"
+output: 
+  pdf_document: 
+    toc: yes
+    toc_depth: 1
+urlcolor: blue
+---
+
+# Introduction
+
+## Motivation
+
+## Problem
+
+# Data
+
+# Describtion of the models
+
+## Priors
+
+# Stan models
+
+# Rhat convergence diagnostics and interpretation
+
+#  HMC specific convergence diagnostics
+
+# Effective sample size diagnostic (n_eff)
+
+# Posterior predictive checking and interpretation 
+
+# Model comparison and interpretation of the results
+
+# Predictive performance assessment
+
+# Alternative priors testing
+
+# Problems and potential improvements
+
+# Conclusion
+
+# Self-reflection about what the group learned 
