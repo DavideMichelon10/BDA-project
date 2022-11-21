@@ -8,6 +8,31 @@ output:
 urlcolor: blue
 ---
 
+```{r setup, include=FALSE}
+# This chunk sets echo = TRUE as default, that is print all code.
+# knitr::opts_chunk$set can be used to set other notebook generation options, too.
+# include=FALSE inside curly brackets makes this block not be included in the pdf.
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include=FALSE}
+# To install aaltobda, see the General information in the assignment.
+library(aaltobda)
+library(pracma)
+library(posterior)
+library(cmdstanr)
+library(rstan)
+library(ggplot2)
+library(loo)
+library(dplyr)
+cmdstanr::check_cmdstan_toolchain(fix = TRUE)
+data("factory")
+
+# SEED = 48927
+
+register_knitr_engine(override = FALSE)
+```
+
 # Introduction
 
 ## Motivation
@@ -15,6 +40,52 @@ urlcolor: blue
 ## Problem
 
 # Data
+
+## Some EDA ----
+
+```{r}
+## finish position
+ggplot(f1_dat_finished, aes(x = factor(position))) +
+  geom_bar() +
+  labs(
+    title = "Distribution of finish positions",
+    subtitle = "F1 hybrid era (2014-2020)",
+    x = "Finish position",
+    y = "Count"
+  )
+```
+
+```{r}
+f1_dat_finished %>%
+  filter(driver %in% c("hamilton", "raikkonen", "giovinazzi")) %>%
+  ggplot(aes(x = factor(position), fill = driver)) +
+  geom_bar(position = position_dodge(preserve = "single")) +
+  labs(
+    x = "Finish position",
+    y = "Count",
+    title = "Different drivers' finish positions",
+    subtitle = "Conditional on finishing the race",
+    fill = ""
+  ) +
+  theme(legend.position = "top") +
+  facet_wrap(~year)
+```
+
+```{r}
+f1_dat_finished %>%
+  filter(driver %in% c("hamilton", "raikkonen", "giovinazzi"), year != 2014) %>%
+  ggplot(aes(x = prop_trans, fill = driver)) +
+  geom_density(alpha = 0.5, bw = 0.1) +
+  labs(
+    x = "Smoothed proportion of outperformed drivers",
+    y = "Density",
+    title = "Different drivers' results",
+    subtitle = "Proportion of finished drivers outperformed",
+    fill = ""
+  ) +
+  theme(legend.position = "top", axis.text.x = element_text(angle = 45, vjust = 0.85)) +
+  facet_wrap(~year)
+```
 
 # Describtion of the models
 
