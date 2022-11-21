@@ -44,42 +44,72 @@ register_knitr_engine(override = FALSE)
 ## Some EDA ----
 
 ```{r}
+data = read.csv("./data/race_results_view.csv")
+```
+
+```{r}
+# Data processing 
+## Restricting my analysis to the period 2012-2021
+data <- data %>% filter(
+  position > 0,
+  year > 2011
+)
+## convert to factors
+data <- data %>% mutate(
+  rider_name  = as.factor(rider_name),
+  team_name  = as.factor(team_name)
+)
+
+# New variables
+data <- data %>% group_by(year, sequence) %>% mutate(  
+  position_prop = (n() - position) / (n() - 1),        
+  prop_trans = (position_prop * (n() - 1) + 0.5) / n() 
+  )
+```
+The variable position_prop represents how many rider_names you beat in a race, the variables position_trans is a transformation (see https://stats.stackexchange.com/a/134297/116878)
+
+Preliminary plots
+
+
+```{r}
 ## finish position
-ggplot(f1_dat_finished, aes(x = factor(position))) +
-  geom_bar() +
+ggplot(data, aes(x = factor(position))) +
+  geom_bar(fill = "darkmagenta") +
   labs(
     title = "Distribution of finish positions",
-    subtitle = "F1 hybrid era (2014-2020)",
+    subtitle = "Era (2012-2021)",
     x = "Finish position",
     y = "Count"
   )
 ```
+Dire che non ce ne sono sempre 22 perchè non tutti arrivano in fondo
 
 ```{r}
-f1_dat_finished %>%
-  filter(driver %in% c("hamilton", "raikkonen", "giovinazzi")) %>%
-  ggplot(aes(x = factor(position), fill = driver)) +
+data %>%
+  filter(rider_name %in% c("Rossi, Valentino", "Crutchlow, Cal", "Marquez, Marc")) %>%
+  ggplot(aes(x = factor(position), fill = rider_name)) +
   geom_bar(position = position_dodge(preserve = "single")) +
   labs(
     x = "Finish position",
     y = "Count",
-    title = "Different drivers' finish positions",
+    title = "Different rider_names' finish positions",
     subtitle = "Conditional on finishing the race",
     fill = ""
   ) +
   theme(legend.position = "top") +
   facet_wrap(~year)
 ```
+Dire che non tutti i piloti sono sempre presenti (alcuni si ritirano, altri arrivano dopo)
 
 ```{r}
-f1_dat_finished %>%
-  filter(driver %in% c("hamilton", "raikkonen", "giovinazzi"), year != 2014) %>%
-  ggplot(aes(x = prop_trans, fill = driver)) +
+data %>%
+  filter(rider_name %in% c("Rossi, Valentino", "Crutchlow, Cal", "Marquez, Marc")) %>%
+  ggplot(aes(x = prop_trans, fill = rider_name)) +
   geom_density(alpha = 0.5, bw = 0.1) +
   labs(
-    x = "Smoothed proportion of outperformed drivers",
+    x = "Smoothed proportion of outperformed rider_names",
     y = "Density",
-    title = "Different drivers' results",
+    title = "Different rider_names' results",
     subtitle = "Proportion of finished drivers outperformed",
     fill = ""
   ) +
