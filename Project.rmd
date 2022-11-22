@@ -86,13 +86,14 @@ Dire che non ce ne sono sempre 22 perchè non tutti arrivano in fondo
 
 ```{r}
 data %>%
-  filter(rider_name %in% c("Rossi, Valentino", "Crutchlow, Cal", "Marquez, Marc")) %>%
+  filter(rider_name %in% c("Rossi, Valentino", "Quartararo, Fabio", "Marquez, Marc", "Lorenzo, Jorge")) %>%
   ggplot(aes(x = factor(position), fill = rider_name)) +
   geom_bar(position = position_dodge(preserve = "single")) +
+  scale_x_discrete(limits=rev,breaks=seq(1, 23, 3)) +
   labs(
     x = "Finish position",
     y = "Count",
-    title = "Different rider_names' finish positions",
+    title = "Different rider's finish positions",
     subtitle = "Conditional on finishing the race",
     fill = ""
   ) +
