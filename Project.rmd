@@ -25,6 +25,7 @@ library(rstan)
 library(ggplot2)
 library(loo)
 library(dplyr)
+library(tidyr)
 cmdstanr::check_cmdstan_toolchain(fix = TRUE)
 data("factory")
 
@@ -129,6 +130,70 @@ $\begin{align*} y_{dcs} \sim {\mathcal Beta}(\mu_{dcs},\Phi) \\ logit(\mu_{dcs})
 ## Priors
 
 # Stan models
+```{cmdstan, output.var="separate_model_d"}
+data { 
+  int<lower=0> N; #number of races
+  int<lower=0> J_riders; 
+  int<lower=0> J_teams;
+  matrix[N, J_riders] y_riders;
+  matrix[N, J_teams] y_teams;
+}
+
+parameters {
+  matrix[J_riders,J_teams] mu; 
+  
+}
+
+transformed parameters{
+  
+}
+
+model {
+  for (j in 1:J){
+      mu[j] ~ normal(0, 10);
+      sigma[j] ~ gamma(1,1);
+    }
+  for (j in 1:J){
+    y[,j] ~ normal(mu[j], sigma[j]);
+  } 
+}
+```
+
+# How to build y_dc?
+# Joint posterior distribution?
+# How to build sigma?
+https://mc-stan.org/docs/2_21/functions-reference/multivariate-normal-distribution.html
+```{r}
+test_data_driver <- data.frame(
+  rider_name = data$rider_name,
+  posx = data$prop_trans,
+  sequence = data$year*data$sequence
+  
+)
+
+driver_prop <- test_data_driver %>% pivot_wider(names_from = rider_name, values_from = posx)
+
+test_data_constr <- data.frame(
+  team_name = data$team_name,
+  pos = data$prop_trans,
+  sequence = data$year*data$sequence
+  
+)
+
+team_prop <- test_data_constr %>% pivot_wider(names_from = team_name, values_from = pos)
+
+
+
+for(i in c(2:ncol(team_prop))){
+  temp <- team_prop[,i]
+  team_prop[,i] = lapply(temp, function(x) lapply(x, mean))
+}
+
+```
+```{r}
+
+```
+
 
 # Rhat convergence diagnostics and interpretation
 
