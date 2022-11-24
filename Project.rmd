@@ -33,9 +33,17 @@ register_knitr_engine(override = FALSE)
 
 # Introduction
 
+spiegare dataset come dalla ta
+
 ## Motivation
 
+predirre vincitore moto gp basandosi sulle sue skill e sulla sua moto
+
 ## Problem
+
+(a) what is the relative influence of the driver and constructor on race results,
+(b) how do drivers rank in terms of skill level, and (c) how do constructors rank in terms of
+race car advantage?
 
 # Data
 
@@ -116,7 +124,9 @@ data %>%
   facet_wrap(~year)
 ```
 
-# Describtion of the models
+# Description of the models
+
+spiegare cosa rappresentano i vari beta
 
 Separate model:
 $\begin{align*} y_{dc} \sim {\sf Beta}(\mu_{dc},\Phi) \\ logit(\mu_{dc}) = \beta_{d}  + \beta_{c}  \\ \beta_{d} \sim {\mathcal N}(0,10) \\  \beta_{c} \sim {\mathcal N}(0,10) \end{align*}$
@@ -125,6 +135,8 @@ Hierarchical model:
 $\begin{align*} y_{dcs} \sim {\mathcal Beta}(\mu_{dcs},\Phi) \\ logit(\mu_{dcs}) = \beta_{d} + \beta_{ds} + \beta_{c} + \beta_{cs} \\ \beta_{d} \sim {\mathcal N}(0,\sigma^{2}_{d}) \\ \beta_{ds} \sim {\mathcal N}(0,\sigma^{2}_{ds}) \\ \beta_{c} \sim {\mathcal N}(0,\sigma^{2}_{c}) \\ \beta_{cs} \sim {\mathcal N}(0,\sigma^{2}_{cs}) \\ \sigma_{d} \sim {\mathcal \Gamma}(1,1) \\ \sigma_{ds} \sim {\mathcal \Gamma}(1,1) \\ \sigma_{c} \sim {\mathcal \Gamma}(1,1) \\ \sigma_{cs} \sim {\mathcal \Gamma}(1,1) \end{align*}$
 
 ## Priors
+
+weakly ...
 
 # Stan models
 ```{cmdstan, output.var="separate_model_d"}
@@ -155,14 +167,6 @@ model {
   } 
 }
 ```
-
-# How to build y_dc?
-# Joint posterior distribution?
-# How to build sigma?
-# can we use brms?
-
-
-https://mc-stan.org/docs/2_21/functions-reference/multivariate-normal-distribution.html
 
 
 ```
