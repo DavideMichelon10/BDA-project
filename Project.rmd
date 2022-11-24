@@ -16,8 +16,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r, include=FALSE}
-# To install aaltobda, see the General information in the assignment.
-library(aaltobda)
+
 library(pracma)
 library(posterior)
 library(cmdstanr)
@@ -26,10 +25,8 @@ library(ggplot2)
 library(loo)
 library(dplyr)
 library(tidyr)
-cmdstanr::check_cmdstan_toolchain(fix = TRUE)
-data("factory")
 
-# SEED = 48927
+cmdstanr::check_cmdstan_toolchain(fix = TRUE)
 
 register_knitr_engine(override = FALSE)
 ```
@@ -163,7 +160,9 @@ model {
 # Joint posterior distribution?
 # How to build sigma?
 https://mc-stan.org/docs/2_21/functions-reference/multivariate-normal-distribution.html
-```{r}
+
+
+```
 test_data_driver <- data.frame(
   rider_name = data$rider_name,
   posx = data$prop_trans,
@@ -180,7 +179,7 @@ test_data_constr <- data.frame(
   
 )
 
-team_prop <- test_data_constr %>% pivot_wider(names_from = team_name, values_from = pos)
+team_prop <- test_data_constr %>% pivot_wider(names_from = team_name, values_from = pos) 
 
 
 
@@ -189,9 +188,13 @@ for(i in c(2:ncol(team_prop))){
   team_prop[,i] = lapply(temp, function(x) lapply(x, mean))
 }
 
+save(team_prop,file="team_prop.Rda")
+save(driver_prop,file="driver_prop.Rda")
 ```
-```{r}
 
+```{r}
+load("./team_prop.Rda")
+load("./driver_prop.Rda")
 ```
 
 
