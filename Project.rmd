@@ -25,6 +25,8 @@ library(ggplot2)
 library(loo)
 library(dplyr)
 library(tidyr)
+library(brms)
+library(tidyverse)
 
 cmdstanr::check_cmdstan_toolchain(fix = TRUE)
 
@@ -176,63 +178,81 @@ $\begin{align*} y_{dcs} \sim {\mathcal Beta}(\mu_{dcs},\Phi) \\ logit(\mu_{dcs})
 weakly ...
 
 # Stan models
-```{cmdstan, output.var="separate_model_d"}
+
+{output.var="hierarchical_model_d"}
 data { 
   int<lower=0> N; #number of races
   int<lower=0> J_riders; #number of riders
-  int<lower=0> J_teams; #number of teams
   matrix[N, J_riders] y_riders; 
-  matrix[N, J_teams] y_teams;
 }
 
 parameters {
   vector[J_riders] mu_riders; 
-  vector[J_teams] mu_teams;
   real <lower=0> sigma;
+  real <lower=0> sigma_hyp;
+}
+
+transformed parameters {
+  vector[J_riders] mu = inv_logit(mu_riders);
 }
 
 model {
   //Priors
   for (j in 1:J_riders){
-      mu_riders[j] ~ normal(0, 100);
-  }
-  for (i in 1:J_teams){
-      mu_teams[i] ~ normal(0, 100);
+      mu_riders[j] ~ normal(0, sigma_hyp);
   }
   
   sigma ~ gamma(1,1);
   
   //Likelihood
-  //for (i in 1:J_teams){
-  //  y_teams[,i] ~ beta(mu_teams[i]*sigma, (1-mu_teams[i])*sigma);
-  //}
-  //for (j in 1:J_riders){
-  //  y_riders[,j] ~ beta(mu_riders[j]*sigma, (1-mu_riders[j])*sigma);
-  //}
-  
   for (j in 1:J_riders){
-    for (i in 1:J_teams){
-      mu = inv_logit(mu_teams[i] + mu_riders[j]);
-      y_teams[,i] ~ beta(mu*sigma, (1-mu)*sigma);
-    }
-  }
-  
-  for (i in 1:J_teams){
-    for (j in 1:J_riders){
-      mu = inv_logit(mu_teams[j] + mu_riders[i]);
-      y_riders[,j] ~ beta(mu*sigma, (1-mu)*sigma);
-    }
+    //mu[i] = inv_logit(mu_teams[i])
+    y_riders[,j] ~ beta(mu[j]*sigma, (1-mu[j])*sigma);
   }
 
 }
-```
 
-
+{r}
+list_drivers = list(y_riders = driver_prop, N = nrow(driver_prop), J_riders = ncol(driver_prop))
+fit_driver <- hierarchical_model_d$sample(data = list_drivers, refresh=1000)
 
 ```{r}
+# basic model
+fit_basic <- brm(
+  formula = prop_trans ~ 0 + (1 | rider_name) + (1 | team_name),
+  family  = Beta(),
+  data    = data,
+  backend = "cmdstanr",
+  chains  = 4,
+  cores   = 6,
+  threads = 3,
+  warmup  = 1000,
+  iter    = 3500
+)
+
+summary(fit_basic)
+write_rds(fit_basic, "fit/fit_basic.rds")
 
 ```
 
+```{r}
+# year model
+fit_year <- brm(
+  formula = prop_trans ~ 0 + (1 | rider_name) + (1 | team_name) + (1 | rider_name:year) + (1|team_name:year),
+  family  = Beta(),
+  data    = data,
+  backend = "cmdstanr",
+  chains  = 4,
+  cores   = 6,
+  threads = 3,
+  warmup  = 1000,
+  iter    = 3500
+)
+
+summary(fit_year)
+write_rds(fit_year, "fit/fit_year.rds")
+
+```
 
 # Rhat convergence diagnostics and interpretation
 
