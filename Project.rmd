@@ -231,7 +231,7 @@ fit_basic <- brm(
 )
 
 summary(fit_basic)
-write_rds(fit_basic, "fit/fit_basic.rds")
+write_rds(fit_basic, "./fit/fit_basic.rds")
 
 ```
 
@@ -244,17 +244,24 @@ fit_year <- brm(
   backend = "cmdstanr",
   chains  = 4,
   cores   = 6,
-  threads = 3,
+  threads = 2,
   warmup  = 1000,
   iter    = 3500
 )
 
 summary(fit_year)
-write_rds(fit_year, "fit/fit_year.rds")
+write_rds(fit_year, "./fit/fit_year.rds")
 
 ```
 
+```{r}
+mcmc_plot(fit_year, type = "trace") +
+  facet_wrap(~parameter, nrow = 6, scales = "free")
+```
+
+
 # Rhat convergence diagnostics and interpretation
+
 
 #  HMC specific convergence diagnostics
 
