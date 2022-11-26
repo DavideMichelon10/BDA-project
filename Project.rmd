@@ -216,7 +216,6 @@ model {
 list_drivers = list(y_riders = driver_prop, N = nrow(driver_prop), J_riders = ncol(driver_prop))
 fit_driver <- hierarchical_model_d$sample(data = list_drivers, refresh=1000)
 
-```{r}
 # basic model
 fit_basic <- brm(
   formula = prop_trans ~ 0 + (1 | rider_name) + (1 | team_name),
@@ -230,12 +229,14 @@ fit_basic <- brm(
   iter    = 3500
 )
 
-summary(fit_basic)
 write_rds(fit_basic, "./fit/fit_basic.rds")
+
+```{r}
+fit_basic = read_rds("./fit/fit_basic.rds")
+summary(fit_basic)
 
 ```
 
-```{r}
 # year model
 fit_year <- brm(
   formula = prop_trans ~ 0 + (1 | rider_name) + (1 | team_name) + (1 | rider_name:year) + (1|team_name:year),
@@ -249,9 +250,11 @@ fit_year <- brm(
   iter    = 3500
 )
 
-summary(fit_year)
 write_rds(fit_year, "./fit/fit_year.rds")
 
+```{r}
+fit_year = read_rds("./fit/fit_year.rds")
+summary(fit_year)
 ```
 
 ```{r}
