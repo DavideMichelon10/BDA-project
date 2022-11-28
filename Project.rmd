@@ -260,6 +260,18 @@ write_rds(fit_year, "./fit/fit_year.rds")
 fit_year = read_rds("./fit/fit_year.rds")
 summary(fit_year)
 ```
+```{r}
+library(nlmeU)
+library(corrplot)
+library(nlme)
+library(lattice)
+library(plot.matrix)
+library(lme4)
+library(insight)
+a = ranef(fit_year)
+dotplot(a$rider_name)
+```
+
 
 ```{r}
 mcmc_plot(fit_year, type = "trace") +
