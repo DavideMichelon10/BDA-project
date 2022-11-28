@@ -26,6 +26,7 @@ library(loo)
 library(dplyr)
 library(tidyr)
 library(brms)
+library(firatheme)
 # library(tidyverse)
 
 cmdstanr::check_cmdstan_toolchain(fix = TRUE)
@@ -281,12 +282,83 @@ mcmc_plot(fit_year, type = "trace") +
 
 # Rhat convergence diagnostics and interpretation
 
+Basic model
+
+```{r}
+rhats <- rhat(fit_basic)
+any(rhats[!is.nan(rhats)] > 1.01)
+```
+
+Year model
+
+```{r}
+rhats <- rhat(fit_year)
+any(rhats[!is.nan(rhats)] > 1.01)
+```
 
 #  HMC specific convergence diagnostics
 
 # Effective sample size diagnostic (n_eff)
 
 # Posterior predictive checking and interpretation 
+
+```{r}
+# 2019 posterior predictive check ----
+# create drivers & constructors in 2019
+pred_tab <-
+  data %>%
+  filter(year == 2019) %>%
+  select(rider_name, team_name, year)
+
+# predict proportion of outperformed drivers
+pp_tab <- posterior_predict(fit_year, pred_tab)
+
+## Proportion plot ----
+# yrep
+pred_tab_long <-
+  pred_tab %>%
+  bind_cols(t(pp_tab) %>% as_tibble(.name_repair = "minimal") %>% 
+  set_names(1:10000)) %>%
+  pivot_longer(
+    cols      = c(-rider_name, -team_name, -year),
+    names_to  = "sample",
+    values_to = "prop_trans"
+  ) %>%
+  mutate(origin = "simulated")
+
+# y
+true_tab_long <-
+  data %>%
+  filter(year == 2019) %>%
+  select(rider_name, team_name, year, prop_trans) %>%
+  mutate(origin = "observed")
+
+ordered_levels <-
+  true_tab_long %>%
+  group_by(rider_name) %>%
+  summarise(prop = mean(prop_trans)) %>%
+  arrange(-prop) %>%
+  pull(rider_name) %>%
+  as.character()
+
+
+bind_rows(pred_tab_long, true_tab_long) %>%
+  ggplot(aes(x = prop_trans, fill = origin)) +
+  geom_density(alpha = 0.8, bw = .07) +
+  facet_wrap(~factor(rider_name, levels = ordered_levels), scales = "free") +
+  xlim(0, 1) +
+  theme_fira() +
+  scale_fill_fira() +
+  theme(legend.position = "top") +
+  labs(
+    title = "2019 season posterior predictive check",
+    x = "Proportion of outperformed drivers",
+    y = "",
+    fill = ""
+  )
+
+```
+
 
 # Model comparison and interpretation of the results
 
