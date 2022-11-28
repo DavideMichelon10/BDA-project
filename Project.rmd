@@ -26,7 +26,7 @@ library(loo)
 library(dplyr)
 library(tidyr)
 library(brms)
-library(tidyverse)
+# library(tidyverse)
 
 cmdstanr::check_cmdstan_toolchain(fix = TRUE)
 
@@ -34,8 +34,8 @@ register_knitr_engine(override = FALSE)
 ```
 
 # Introduction
+Nowadays, given the enormous amount of data that is generated,  it is essential to be able to perform precise analyzes in order to have an important advantage over competitors.In particular, data analysis is proving increasingly important in the world of sport and currently most of high-level coaches rely on data scientists. In this report, we will focus on the MotoGP which is the premier class of motorcycle road racing events held on road circuits. 
 
-spiegare dataset come dalla ta
 
 ## Motivation
 
@@ -50,7 +50,9 @@ race car advantage?
 # Data
 
 ## Data Preparation
-```
+
+```{r}
+
 test_data_driver <- data.frame(
   rider_name = data$rider_name,
   posx = data$prop_trans,
@@ -214,7 +216,7 @@ model {
 
 ```{r}
 list_drivers = list(y_riders = driver_prop, N = nrow(driver_prop), J_riders = ncol(driver_prop))
-fit_driver <- hierarchical_model_d$sample(data = list_drivers, refresh=1000)
+# fit_driver <- hierarchical_model_d$sample(data = list_drivers, refresh=1000)
 
 # basic model
 fit_basic <- brm(
@@ -233,9 +235,8 @@ write_rds(fit_basic, "./fit/fit_basic.rds")
 ```
 
 ```{r}
-fit_basic = read_rds("./fit/fit_basic.rds")
+fit_basic = readRDS("./fit/fit_basic.rds") %>% add_criterion("loo")
 summary(fit_basic)
-
 ```
 
 
@@ -254,10 +255,9 @@ fit_year <- brm(
 )
 ```
 
-write_rds(fit_year, "./fit/fit_year.rds")
 
 ```{r}
-fit_year = read_rds("./fit/fit_year.rds")
+fit_year = readRDS("./fit/fit_year.rds") %>% add_criterion("loo")
 summary(fit_year)
 ```
 ```{r}
@@ -289,6 +289,17 @@ mcmc_plot(fit_year, type = "trace") +
 # Posterior predictive checking and interpretation 
 
 # Model comparison and interpretation of the results
+
+```{r}
+loo_results <- loo_compare(
+  fit_basic,
+  fit_year,
+  model_names = c("Driver + constructor", "Driver + constructor + year")
+)
+
+loo_results
+```
+
 
 # Predictive performance assessment
 
