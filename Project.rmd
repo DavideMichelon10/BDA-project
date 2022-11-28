@@ -34,21 +34,18 @@ cmdstanr::check_cmdstan_toolchain(fix = TRUE)
 register_knitr_engine(override = FALSE)
 ```
 
+
 # Introduction
-Nowadays, given the enormous amount of data that is generated,  it is essential to be able to perform precise analyzes in order to have an important advantage over competitors.In particular, data analysis is proving increasingly important in the world of sport and currently most of high-level coaches rely on data scientists. In this report, we will focus on the MotoGP which is the premier class of motorcycle road racing events held on road circuits. 
+Nowadays, given the enormous amount of data that is generated,  it is essential to be able to perform precise analyzes in order to have an important advantage over competitors. In particular, data analysis is proving increasingly important in the world of sport and currently most of high-level teams rely on data scientists. In this report, we will focus on the MotoGP sport which is the premier class of motorcycle road racing events held on road circuits. Using a public data-set of the MotoGP results from 2012 to 2021, we designed two different models to describe how  drivers and constructions can affect the result of the final world champion. We were curious to understand what is more relevant between drivers and construction teams and whether the chances of final victory for ordinary drivers with first-class teams are higher than normal teams with champion drivers. The first model takes into account only the drivers and construction teams but the results were not satisfactory. Indeed, we found out that the performance of the motorbikes differ according to the technological development and the same motorbike can have opposite performances from year to year. That said, in the second model we introduced the year variable and thus the results have improved significantly.
 
-
-## Motivation
-
-predirre vincitore moto gp basandosi sulle sue skill e sulla sua moto
-
-## Problem
-
-(a) what is the relative influence of the driver and constructor on race results,
-(b) how do drivers rank in terms of skill level, and (c) how do constructors rank in terms of
-race car advantage?
 
 # Data
+The dataset used is public on the website at this [link](https://observablehq.com/@piratus/motogp-results-database). It is an SQLite database with MotoGP race results and it contains 15 tables: bikes, categories, circuits, countries, gp_country_codes, race_conditions, race_results, races, riders, season_categories, season_results, seasons, stage_names, stages, and teams. By using a JavaScript script, we downloaded the table race_results_view where each row represents the finish position of a driver for a specific race. The fields that interest us are:
+(a) year: race year.
+(b) sequence: race number for a specific year. Every first race of every year has sequence equal to 1, the second race has sequence equal to 2 and so on.
+(c) rider_name: name of the drive.
+(d) team_name: name of the construction team.
+(e) position: final position for a specific driver in a specific race.
 
 ## Data Preparation
 
