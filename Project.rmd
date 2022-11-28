@@ -51,8 +51,7 @@ race car advantage?
 
 ## Data Preparation
 
-```{r}
-
+```
 test_data_driver <- data.frame(
   rider_name = data$rider_name,
   posx = data$prop_trans,
@@ -214,7 +213,7 @@ model {
 
 }
 
-```{r}
+```
 list_drivers = list(y_riders = driver_prop, N = nrow(driver_prop), J_riders = ncol(driver_prop))
 # fit_driver <- hierarchical_model_d$sample(data = list_drivers, refresh=1000)
 
@@ -240,7 +239,7 @@ summary(fit_basic)
 ```
 
 
-```{r}
+```
 # year model
 fit_year <- brm(
   formula = prop_trans ~ 0 + (1 | rider_name) + (1 | team_name) + (1 | rider_name:year) + (1|team_name:year),
@@ -260,6 +259,7 @@ fit_year <- brm(
 fit_year = readRDS("./fit/fit_year.rds") %>% add_criterion("loo")
 summary(fit_year)
 ```
+
 ```{r}
 library(nlmeU)
 library(corrplot)
