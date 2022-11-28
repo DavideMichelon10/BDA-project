@@ -166,10 +166,12 @@ data %>%
 
 spiegare cosa rappresentano i vari beta
 
-Separate model:
-$\begin{align*} y_{dc} \sim {\sf Beta}(\mu_{dc},\Phi) \\ logit(\mu_{dc}) = \beta_{d}  + \beta_{c}  \\ \beta_{d} \sim {\mathcal N}(0,10) \\  \beta_{c} \sim {\mathcal N}(0,10) \end{align*}$
+For driver d and constructor c , we specify the following generative multilevel model for the proportion of drivers beaten $y_{dc}$:
 
-Hierarchical model:
+$\begin{align*} y_{dc} \sim {\sf Beta}(\mu_{dc},\Phi) \\ logit(\mu_{dc}) = \beta_{d}  + \beta_{c}  \\ \beta_{d} \sim {\mathcal N}(0,\sigma^{2}_{d}) \\  \beta_{c} \sim {\mathcal N}(0,\sigma^{2}_{c}) \\ \sigma_{d} \sim {\mathcal \Gamma}(1,1) \\ \sigma_{c} \sim {\mathcal \Gamma}(1,1) \end{align*}$
+
+Taking into account that the performances of a driver can change over years (e.g. for his age or for his experience), and that also the quality of the motorbike can depends on the season (e.g. for new technologies) $y_{dcs}$:
+
 $\begin{align*} y_{dcs} \sim {\mathcal Beta}(\mu_{dcs},\Phi) \\ logit(\mu_{dcs}) = \beta_{d} + \beta_{ds} + \beta_{c} + \beta_{cs} \\ \beta_{d} \sim {\mathcal N}(0,\sigma^{2}_{d}) \\ \beta_{ds} \sim {\mathcal N}(0,\sigma^{2}_{ds}) \\ \beta_{c} \sim {\mathcal N}(0,\sigma^{2}_{c}) \\ \beta_{cs} \sim {\mathcal N}(0,\sigma^{2}_{cs}) \\ \sigma_{d} \sim {\mathcal \Gamma}(1,1) \\ \sigma_{ds} \sim {\mathcal \Gamma}(1,1) \\ \sigma_{c} \sim {\mathcal \Gamma}(1,1) \\ \sigma_{cs} \sim {\mathcal \Gamma}(1,1) \end{align*}$
 
 ## Priors
@@ -237,11 +239,16 @@ summary(fit_basic)
 ```
 
 
-```
+```{r}
 # year model
+prior2 <- c(
+    prior(gamma(1,1), class = sd)
+   )
+
 fit_year <- brm(
   formula = prop_trans ~ 0 + (1 | rider_name) + (1 | team_name) + (1 | rider_name:year) + (1|team_name:year),
   family  = Beta(),
+  prior = prior2,
   data    = data,
   backend = "cmdstanr",
   chains  = 4,
