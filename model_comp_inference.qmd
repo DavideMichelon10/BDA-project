@@ -1,0 +1,101 @@
+---
+title: "Model Comparison and Interpretation"
+format: pdf
+---
+
+```{r}
+library(pracma)
+library(posterior)
+library(cmdstanr)
+library(rstan)
+library(ggplot2)
+library(loo)
+library(dplyr)
+library(tidyr)
+library(brms)
+library(firatheme)
+library(nlmeU)
+library(corrplot)
+library(nlme)
+library(lattice)
+library(plot.matrix)
+library(lme4)
+library(insight)
+library(firatheme)
+library(purrr)
+# library(tidyverse)
+
+cmdstanr::check_cmdstan_toolchain(fix = TRUE)
+
+register_knitr_engine(override = FALSE)
+```
+Data set-up
+
+```{r}
+data = read.csv("./data/race_results_view.csv")
+```
+
+```{r}
+# Data processing 
+## Restricting my analysis to the period 2012-2021
+data <- data %>% filter(
+  position > 0,
+  year > 2011
+)
+## convert to factors
+data <- data %>% mutate(
+  rider_name  = as.factor(rider_name),
+  team_name  = as.factor(team_name)
+)
+
+# New variables
+data <- data %>% group_by(year, sequence) %>% mutate(  
+  position_prop = (n() - position) / (n() - 1),        
+  prop_trans = (position_prop * (n() - 1) + 0.5) / n() 
+  )
+```
+
+### Model fits
+```{r}
+fit_basic = readRDS("./fit/fit_basic.rds") %>% add_criterion("loo")
+summary(fit_basic)
+```
+```{r}
+fit_year = readRDS("./fit/fit_year.rds") %>% add_criterion("loo")
+summary(fit_year)
+```
+### Inference about Rider skills
+```{r}
+riders_focus <- c("Rossi")
+rider_mean <- as_draws_df(fit_year) %>% select(-.chain, -.iteration) %>% select(contains("r_rider_name")) %>% select(-contains("year"))
+rider_form <- as_draws_df(fit_year) %>% select(-.chain,-.iteration) %>% select(contains("r_rider_name:year"))
+```
+```{r}
+rider_mean_long <-
+  rider_mean  %>%
+  pivot_longer(cols = starts_with("r_rider_name"),names_to = "Rider", values_to = "Skill",
+               names_pattern = "\\[(\\w{1,10}.*?),..*?\\]") %>% 
+  filter(is.element(Rider,riders_focus)) %>% 
+  #filter(Rider != "NA") %>% 
+  mutate(Rider = as.factor(Rider))
+
+rider_form_long <-
+  rider_form %>%
+  pivot_longer(cols = starts_with("r_rider_name"), names_to = c("Rider", "Year"), values_to = "Form",
+               names_pattern = "\\[(\\w{1,10}).*?(\\d{1,4}).*?,") %>%
+  mutate(Rider = as.factor(Rider), Year = as.integer(Year)) %>% 
+  filter(is.element(Rider,riders_focus)) %>% 
+  unique(.)
+
+rider_skill_summary <-
+  merge(x=rider_form_long, y=rider_mean_long, by = "Rider") %>%
+  mutate(skill_yr = Form + Skill) %>%
+  group_by(Rider, Year) %>%
+  summarise(
+    est = mean(skill_yr),
+    lower = quantile(skill_yr, 0.055),
+    upper = quantile(skill_yr, 0.945),
+  )
+```
+
+
