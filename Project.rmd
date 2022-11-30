@@ -381,8 +381,17 @@ loo_results
 
 # Alternative priors testing
 
+
 # Problems and potential improvements
+During the project, we encountered some problems. The first issue was finding an idea and a reliable data set. After that, the initial idea was to use Stan with the data in the form of a matrix of observations and drivers However, this approach would have created multiple null entries (NA values) which are hard to handle using Stan. Therefore, we decided to switch to the brms library, which handles null entries automatically. The main difficulty was figuring out how to choose priors, in particular, how to define hyper-parameters. Moreover, defining priors in brms has been challenging and it took some time.
+
+
+Although the model shows satisfactory results, a possible improvement could be to add more variables to the model. For example, a more in-depth analysis could be performed on the circuits, understanding which ones have common characteristics (e.g. circuits with many turns vs circuits with long straights) so as to be able to understand which are the weaknesses of motorbikes or riders and therefore where they should focus to improve.
+
+Condizioni meteo?
 
 # Conclusion
 
 # Self-reflection about what the group learned 
+
+Working on this project has been challenging, but at the same time stimulating and has allowed us to learn different notions about Bayesian logic. First of all, we learned how to work as a team in order to be as efficient as possible, we initially made an high-level analysis and we divided the tasks. After that, we met in person one last time before delivering to review everything and resolve the last doubts. Moreover, we have learned how to approach a statistical problem from start to finish, we believe that the final project has taught us to combine what we did with the assignments. In particular,we learned that data collection and data cleaning are essential to have a reliable and bias-free result.
