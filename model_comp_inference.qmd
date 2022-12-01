@@ -23,7 +23,9 @@ library(lme4)
 library(insight)
 library(firatheme)
 library(purrr)
-# library(tidyverse)
+library(patchwork)
+library(glue)
+library(tidyverse)
 
 cmdstanr::check_cmdstan_toolchain(fix = TRUE)
 
@@ -52,43 +54,72 @@ data <- data %>% mutate(
 data <- data %>% group_by(year, sequence) %>% mutate(  
   position_prop = (n() - position) / (n() - 1),        
   prop_trans = (position_prop * (n() - 1) + 0.5) / n() 
-  )
+  ) %>% 
+  ungroup()
+```
+
+```{r}
+prior2 <- c(
+    prior(gamma(1,1), class = sd)
+   )
+```
+
+
+```{r}
+fit_year <- brm(
+  formula = prop_trans ~ 0 + (1 | rider_name) + (1 | rider_name:year) + (1 | team_name)  + (1|team_name:year),
+  family  = Beta(),
+  prior = prior2,
+  data    = data,
+  backend = "cmdstanr",
+  chains  = 4,
+  cores   = 6,
+  warmup  = 1000,
+  iter    = 3500
+)
 ```
 
 ### Model fits
 ```{r}
-fit_basic = readRDS("./fit/fit_basic.rds") %>% add_criterion("loo")
-summary(fit_basic)
+#fit_basic = readRDS("./fit/fit_basic.rds")
+#summary(fit_basic)
 ```
+
 ```{r}
-fit_year = readRDS("./fit/fit_year.rds") %>% add_criterion("loo")
+#fit_year = readRDS("./fit/fit_year.rds")
 summary(fit_year)
 ```
+### MCMC chain convergence
+```{r}
+mcmc_plot(fit_year, type = "trace") +
+  facet_wrap(~parameter, nrow = 6, scales = "free") 
+  #theme_fira() +
+  #scale_colour_fira()
+```
+
+
 ### Inference about Rider skills
 ```{r}
-riders_focus <- c("Rossi")
-rider_mean <- as_draws_df(fit_year) %>% select(-.chain, -.iteration) %>% select(contains("r_rider_name")) %>% select(-contains("year"))
-rider_form <- as_draws_df(fit_year) %>% select(-.chain,-.iteration) %>% select(contains("r_rider_name:year"))
+riders_focus <- c("Rossi","Crutchlow","Marquez")
+rider_mean <- as_draws_df(fit_year) %>% select(-.chain, -.iteration) %>% select(contains("r_rider_name"),.draw) %>% select(-contains("year"))
+rider_form <- as_draws_df(fit_year) %>% select(-.chain,-.iteration) %>% select(contains("r_rider_name:year"),.draw)
 ```
+
 ```{r}
 rider_mean_long <-
   rider_mean  %>%
-  pivot_longer(cols = starts_with("r_rider_name"),names_to = "Rider", values_to = "Skill",
+  pivot_longer(-.draw, names_to = "Rider", values_to = "Skill",
                names_pattern = "\\[(\\w{1,10}.*?),..*?\\]") %>% 
-  filter(is.element(Rider,riders_focus)) %>% 
-  #filter(Rider != "NA") %>% 
   mutate(Rider = as.factor(Rider))
 
 rider_form_long <-
   rider_form %>%
-  pivot_longer(cols = starts_with("r_rider_name"), names_to = c("Rider", "Year"), values_to = "Form",
+  pivot_longer(-.draw, names_to = c("Rider", "Year"), values_to = "Form",
                names_pattern = "\\[(\\w{1,10}).*?(\\d{1,4}).*?,") %>%
-  mutate(Rider = as.factor(Rider), Year = as.integer(Year)) %>% 
-  filter(is.element(Rider,riders_focus)) %>% 
-  unique(.)
+  mutate(Rider = as.factor(Rider), Year = as.integer(Year))
 
 rider_skill_summary <-
-  merge(x=rider_form_long, y=rider_mean_long, by = "Rider") %>%
+  merge(x=rider_form_long, y=rider_mean_long, by = c("Rider",".draw")) %>%
   mutate(skill_yr = Form + Skill) %>%
   group_by(Rider, Year) %>%
   summarise(
@@ -96,6 +127,65 @@ rider_skill_summary <-
     lower = quantile(skill_yr, 0.055),
     upper = quantile(skill_yr, 0.945),
   )
+
+
+plt_skill_trajectory <-
+  rider_skill_summary %>%
+  ungroup() %>%
+  filter(Rider %in% riders_focus) %>%
+  mutate(Rider = fct_reorder(Rider, -est)) %>%
+  ggplot(aes(x = Year, y = est, ymin = lower, ymax = upper)) +
+  geom_ribbon(aes(fill = Rider), alpha = .2) +
+  geom_line(aes(colour = Rider)) +
+  geom_point(aes(colour = Rider)) +
+  scale_fill_fira(guide = "none") +
+  scale_colour_fira(guide = "none") +
+  #theme_fira() +
+  facet_wrap(~Rider) +
+  labs(x = "Season", y = "Skill (log odds ratio)", title = "MotoGP Rider skill trajectories",
+       subtitle = "era (2011-2021) Rider skill,\naccounting for yearly team advantage.")
+
+
 ```
 
+```{r}
+plt_skill_trajectory
+```
+```{r}
+plt_rider_skill_2021 <-
+  rider_skill_summary %>%
+  ungroup() %>%
+  filter(Year == 2021) %>%
+  mutate(Rider = fct_reorder(Rider, est)) %>%
+  ggplot(aes(y = Rider, x = est, xmin = lower, xmax = upper)) +
+  geom_pointrange(colour = firaCols[3]) +
+  #theme_fira() +
+  labs(title = "2021 MotoGP rider skill",
+       subtitle = "Accounting for yearly team advantage.",
+       x = "Skill (log odds ratio)",
+       y = "Rider")
+```
+
+```{r}
+plt_rider_skill_2021
+```
+
+```{r}
+sfit <- summary(fit_year, prob = 0.89)
+ranef_summary <- rbind(
+  "team" = sfit$random$team_name,
+  "team form" = sfit$random$`team_name:year`,
+  "rider" = sfit$random$rider_name,
+  "rider form" = sfit$random$`rider_name:year`
+)[1:4, 1:4]
+xtable::xtable(ranef_summary)
+```
+
+```{r}
+# how much of variance is due to car?
+colSums(ranef_summary[1:2,]^2)/colSums(ranef_summary^2)
+
+# and how much due to the driver?
+colSums(ranef_summary[3:4,]^2)/colSums(ranef_summary^2)
+```
 
