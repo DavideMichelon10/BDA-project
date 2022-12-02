@@ -60,8 +60,28 @@ data <- data %>% group_by(year, sequence) %>% mutate(
 
 ```{r}
 prior2 <- c(
-    prior(gamma(1,1), class = sd)
+    prior(gamma(1,1), class = sd),
+    prior(gamma(0.01,0.01), class = phi)
    )
+```
+
+```{r}
+fit_basic <- brm(
+  formula = prop_trans ~ 0 + (1 | rider_name) + (1 | team_name),
+  family  = Beta(),
+  data    = data,
+  prior = prior2,
+  backend = "cmdstanr",
+  chains  = 4,
+  cores   = 6,
+  warmup  = 1000,
+  iter    = 3500
+)
+```
+
+
+```{r}
+prior_summary(fit_basic)
 ```
 
 
@@ -78,11 +98,15 @@ fit_year <- brm(
   iter    = 3500
 )
 ```
+```{r}
+prior_summary(fit_year)
+```
+
 
 ### Model fits
 ```{r}
 #fit_basic = readRDS("./fit/fit_basic.rds")
-#summary(fit_basic)
+summary(fit_basic)
 ```
 
 ```{r}
@@ -104,6 +128,16 @@ riders_focus <- c("Rossi","Crutchlow","Marquez")
 rider_mean <- as_draws_df(fit_year) %>% select(-.chain, -.iteration) %>% select(contains("r_rider_name"),.draw) %>% select(-contains("year"))
 rider_form <- as_draws_df(fit_year) %>% select(-.chain,-.iteration) %>% select(contains("r_rider_name:year"),.draw)
 ```
+
+```{r}
+rider_mean_basic <- as_draws_df(fit_basic) %>% select(-.chain, -.iteration) %>% select(contains("r_rider_name"),.draw)
+```
+
+
+```{r}
+as_draws_df(fit_year)
+```
+
 
 ```{r}
 rider_mean_long <-
