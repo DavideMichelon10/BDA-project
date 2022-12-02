@@ -170,9 +170,16 @@ For driver d and constructor c , we specify the following generative multilevel 
 
 $\begin{align*} y_{dc} \sim {\sf Beta}(\mu_{dc},\Phi) \\ logit(\mu_{dc}) = \beta_{d}  + \beta_{c}  \\ \beta_{d} \sim {\mathcal N}(0,\sigma^{2}_{d}) \\  \beta_{c} \sim {\mathcal N}(0,\sigma^{2}_{c}) \\ \sigma_{d} \sim {\mathcal \Gamma}(1,1) \\ \sigma_{c} \sim {\mathcal \Gamma}(1,1) \end{align*}$
 
+The (hypothetical) average driver at an average team will on
+average have $\mu_{dc}$ = 0, which translates into a probability of 0.5 of beating other drivers.
+
+Then, $\Beta_{d}$ represents the mean driver skill as a log-odds ratio; e.g., if βd = 0:3, this means that the probability of beating other drivers is 1=(1 + e−0:3) ≈ 0:57.
+
 Taking into account that the performances of a driver can change over years (e.g. for his age or for his experience), and that also the quality of the motorbike can depends on the season (e.g. for new technologies) $y_{dcs}$:
 
 $\begin{align*} y_{dcs} \sim {\mathcal Beta}(\mu_{dcs},\Phi) \\ logit(\mu_{dcs}) = \beta_{d} + \beta_{ds} + \beta_{c} + \beta_{cs} \\ \beta_{d} \sim {\mathcal N}(0,\sigma^{2}_{d}) \\ \beta_{ds} \sim {\mathcal N}(0,\sigma^{2}_{ds}) \\ \beta_{c} \sim {\mathcal N}(0,\sigma^{2}_{c}) \\ \beta_{cs} \sim {\mathcal N}(0,\sigma^{2}_{cs}) \\ \sigma_{d} \sim {\mathcal \Gamma}(1,1) \\ \sigma_{ds} \sim {\mathcal \Gamma}(1,1) \\ \sigma_{c} \sim {\mathcal \Gamma}(1,1) \\ \sigma_{cs} \sim {\mathcal \Gamma}(1,1) \end{align*}$
+
+So here we also included the seasonal driver form parameter βds, which represents yearly deviations from the long-term average driver skill and βcs, which represents yearly deviations from the long-term average constructor advantage.
 
 ## Priors
 
