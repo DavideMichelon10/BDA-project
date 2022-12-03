@@ -26,7 +26,7 @@ library(loo)
 library(dplyr)
 library(tidyr)
 library(brms)
-library(firatheme)
+# library(firatheme)
 # library(tidyverse)
 
 cmdstanr::check_cmdstan_toolchain(fix = TRUE)
@@ -185,42 +185,8 @@ So here we also included the seasonal driver form parameter βds, which represen
 
 weakly ...
 
-# Stan models
 
-{output.var="hierarchical_model_d"}
-data { 
-  int<lower=0> N; #number of races
-  int<lower=0> J_riders; #number of riders
-  matrix[N, J_riders] y_riders; 
-}
-
-parameters {
-  vector[J_riders] mu_riders; 
-  real <lower=0> sigma;
-  real <lower=0> sigma_hyp;
-}
-
-transformed parameters {
-  vector[J_riders] mu = inv_logit(mu_riders);
-}
-
-model {
-  //Priors
-  for (j in 1:J_riders){
-      mu_riders[j] ~ normal(0, sigma_hyp);
-  }
-  
-  sigma ~ gamma(1,1);
-  
-  //Likelihood
-  for (j in 1:J_riders){
-    //mu[i] = inv_logit(mu_teams[i])
-    y_riders[,j] ~ beta(mu[j]*sigma, (1-mu[j])*sigma);
-  }
-
-}
-
-```
+```{r, eval = FALSE}
 list_drivers = list(y_riders = driver_prop, N = nrow(driver_prop), J_riders = ncol(driver_prop))
 # fit_driver <- hierarchical_model_d$sample(data = list_drivers, refresh=1000)
 
@@ -246,7 +212,7 @@ summary(fit_basic)
 ```
 
 
-```{r}
+```{r, eval = FALSE}
 # year model
 prior2 <- c(
     prior(gamma(1,1), class = sd)
@@ -310,6 +276,9 @@ any(rhats[!is.nan(rhats)] > 1.01)
 #  HMC specific convergence diagnostics
 
 # Effective sample size diagnostic (n_eff)
+
+The importance sampling effective sample describes the variability in the weights
+
 
 # Posterior predictive checking and interpretation 
 
@@ -382,7 +351,8 @@ loo_results <- loo_compare(
 
 loo_results
 ```
-
+Comparing the models, the best one is the model described by drivers, constructors and years. Models are sorted in decreasing order: the first is the best whereas the last is the worst. The difference in ELPD (elpd_diff) between the two models is considerably high, this means that the 2 models have different predictive performance. Moreover, 
+it is notable how taking the year into consideration leads to significantly better results.
 
 # Predictive performance assessment
 
