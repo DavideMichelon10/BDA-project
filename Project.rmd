@@ -26,7 +26,7 @@ library(loo)
 library(dplyr)
 library(tidyr)
 library(brms)
-# library(firatheme)
+library(firatheme)
 # library(tidyverse)
 
 cmdstanr::check_cmdstan_toolchain(fix = TRUE)
@@ -110,7 +110,9 @@ data <- data %>% group_by(year, sequence) %>% mutate(
   prop_trans = (position_prop * (n() - 1) + 0.5) / n() 
   )
 ```
-The variable position_prop represents how many rider_names you beat in a race, the variables position_trans is a transformation (see https://stats.stackexchange.com/a/134297/116878)
+The variable position_prop represents how many rider_names you beat in a race, the variables position_trans is a transformation: Indeed The documentation for the R betareg package mentions that: "if y also assumes the extremes 0 and 1, a useful transformation in practice is (y * (n−1) + 0.5) / n where n is the sample size".
+
+(see https://stats.stackexchange.com/a/134297/116878)
 
 Preliminary plots
 
@@ -168,7 +170,11 @@ spiegare cosa rappresentano i vari beta
 
 For driver d and constructor c , we specify the following generative multilevel model for the proportion of drivers beaten $y_{dc}$:
 
-$\begin{align*} y_{dc} \sim {\sf Beta}(\mu_{dc},\Phi) \\ logit(\mu_{dc}) = \beta_{d}  + \beta_{c}  \\ \beta_{d} \sim {\mathcal N}(0,\sigma^{2}_{d}) \\  \beta_{c} \sim {\mathcal N}(0,\sigma^{2}_{c}) \\ \sigma_{d} \sim {\mathcal \Gamma}(1,1) \\ \sigma_{c} \sim {\mathcal \Gamma}(1,1) \end{align*}$
+$\begin{align*} y_{dc} \sim {\sf Beta}(\mu_{dc},\Phi) \\ logit(\mu_{dc}) = \beta_{d}  + \beta_{c}  \\ \beta_{d} \sim {\mathcal N}(0,\sigma^{2}_{d}) \\  \beta_{c} \sim {\mathcal N}(0,\sigma^{2}_{c}) \\ \sigma_{d} \sim {\mathcal \Gamma}(1,1) \\ \sigma_{c} \sim {\mathcal \Gamma}(1,1) \\ \Phi \sim \Gamma(1,1) \end{align*}$
+
+The Beta distribution of the model does not follow the standard $(\alpha,\beta)$ parametrization, but rather a Beta regression formulation with a mean parameter $\mu$ and a dispersion parameter $\Phi$ (Ferrari and Cribari-Neto, 2004).
+
+In particular, 
 
 The (hypothetical) average driver at an average team will on
 average have $\mu_{dc}$ = 0, which translates into a probability of 0.5 of beating other drivers.
@@ -177,7 +183,7 @@ Then, $\Beta_{d}$ represents the mean driver skill as a log-odds ratio; e.g., if
 
 Taking into account that the performances of a driver can change over years (e.g. for his age or for his experience), and that also the quality of the motorbike can depends on the season (e.g. for new technologies) $y_{dcs}$:
 
-$\begin{align*} y_{dcs} \sim {\mathcal Beta}(\mu_{dcs},\Phi) \\ logit(\mu_{dcs}) = \beta_{d} + \beta_{ds} + \beta_{c} + \beta_{cs} \\ \beta_{d} \sim {\mathcal N}(0,\sigma^{2}_{d}) \\ \beta_{ds} \sim {\mathcal N}(0,\sigma^{2}_{ds}) \\ \beta_{c} \sim {\mathcal N}(0,\sigma^{2}_{c}) \\ \beta_{cs} \sim {\mathcal N}(0,\sigma^{2}_{cs}) \\ \sigma_{d} \sim {\mathcal \Gamma}(1,1) \\ \sigma_{ds} \sim {\mathcal \Gamma}(1,1) \\ \sigma_{c} \sim {\mathcal \Gamma}(1,1) \\ \sigma_{cs} \sim {\mathcal \Gamma}(1,1) \end{align*}$
+$\begin{align*} y_{dcs} \sim {\mathcal Beta}(\mu_{dcs},\Phi) \\ logit(\mu_{dcs}) = \beta_{d} + \beta_{ds} + \beta_{c} + \beta_{cs} \\ \beta_{d} \sim {\mathcal N}(0,\sigma^{2}_{d}) \\ \beta_{ds} \sim {\mathcal N}(0,\sigma^{2}_{ds}) \\ \beta_{c} \sim {\mathcal N}(0,\sigma^{2}_{c}) \\ \beta_{cs} \sim {\mathcal N}(0,\sigma^{2}_{cs}) \\ \sigma_{d} \sim {\mathcal \Gamma}(1,1) \\ \sigma_{ds} \sim {\mathcal \Gamma}(1,1) \\ \sigma_{c} \sim {\mathcal \Gamma}(1,1) \\ \sigma_{cs} \sim {\mathcal \Gamma}(1,1) \\ \Phi \sim \Gamma(1,1) \end{align*}$
 
 So here we also included the seasonal driver form parameter βds, which represents yearly deviations from the long-term average driver skill and βcs, which represents yearly deviations from the long-term average constructor advantage.
 
@@ -185,16 +191,59 @@ So here we also included the seasonal driver form parameter βds, which represen
 
 weakly ...
 
+# Stan models
 
-```{r, eval = FALSE}
+{output.var="hierarchical_model_d"}
+data { 
+  int<lower=0> N; #number of races
+  int<lower=0> J_riders; #number of riders
+  matrix[N, J_riders] y_riders; 
+}
+
+parameters {
+  vector[J_riders] mu_riders; 
+  real <lower=0> sigma;
+  real <lower=0> sigma_hyp;
+}
+
+transformed parameters {
+  vector[J_riders] mu = inv_logit(mu_riders);
+}
+
+model {
+  //Priors
+  for (j in 1:J_riders){
+      mu_riders[j] ~ normal(0, sigma_hyp);
+  }
+  
+  sigma ~ gamma(1,1);
+  
+  //Likelihood
+  for (j in 1:J_riders){
+    //mu[i] = inv_logit(mu_teams[i])
+    y_riders[,j] ~ beta(mu[j]*sigma, (1-mu[j])*sigma);
+  }
+
+}
+
+```
 list_drivers = list(y_riders = driver_prop, N = nrow(driver_prop), J_riders = ncol(driver_prop))
 # fit_driver <- hierarchical_model_d$sample(data = list_drivers, refresh=1000)
+
+```
+
+```{r}
+prior <- c(
+    prior(gamma(1,1), class = sd),
+    prior(gamma(1,1), class = phi)
+   )
 
 # basic model
 fit_basic <- brm(
   formula = prop_trans ~ 0 + (1 | rider_name) + (1 | team_name),
   family  = Beta(),
   data    = data,
+  prior = prior,
   backend = "cmdstanr",
   chains  = 4,
   cores   = 6,
@@ -206,22 +255,20 @@ fit_basic <- brm(
 write_rds(fit_basic, "./fit/fit_basic.rds")
 ```
 
+
 ```{r}
-fit_basic = readRDS("./fit/fit_basic.rds") %>% add_criterion("loo")
+#fit_basic = readRDS("./fit/fit_basic.rds") %>% add_criterion("loo")
 summary(fit_basic)
 ```
 
 
-```{r, eval = FALSE}
+```{r}
 # year model
-prior2 <- c(
-    prior(gamma(1,1), class = sd)
-   )
 
 fit_year <- brm(
   formula = prop_trans ~ 0 + (1 | rider_name) + (1 | team_name) + (1 | rider_name:year) + (1|team_name:year),
   family  = Beta(),
-  prior = prior2,
+  prior = prior,
   data    = data,
   backend = "cmdstanr",
   chains  = 4,
@@ -230,11 +277,13 @@ fit_year <- brm(
   warmup  = 1000,
   iter    = 3500
 )
+
+write_rds(fit_year, "./fit/fit_year.rds")
 ```
 
 
 ```{r}
-fit_year = readRDS("./fit/fit_year.rds") %>% add_criterion("loo")
+#fit_year = readRDS("./fit/fit_year.rds") %>% add_criterion("loo")
 summary(fit_year)
 ```
 
@@ -273,12 +322,17 @@ rhats <- rhat(fit_year)
 any(rhats[!is.nan(rhats)] > 1.01)
 ```
 
+$\hat{R}$ is an estimate for potential scale reduction: it tell us if we are using the correct parameters. In particular as N->+$\infty$ it should decrease to 1.
+
+Conceptually it represents the ratio between an overestimate of the marginal posterior variance (done using a linear combination between the within and the between variance) and the within variance.
+
+If $\hat{R}$ is high, then we have reason to believe that proceeding with further simulations may improve our inference about the target distribution of the associated scalar estimand.
+
+A rule of thumb is that if $\hat{R}$ < 1.01 we don't need to increase the number of simulations, so in this case everything is fine.
+
 #  HMC specific convergence diagnostics
 
 # Effective sample size diagnostic (n_eff)
-
-The importance sampling effective sample describes the variability in the weights
-
 
 # Posterior predictive checking and interpretation 
 
@@ -351,13 +405,98 @@ loo_results <- loo_compare(
 
 loo_results
 ```
-Comparing the models, the best one is the model described by drivers, constructors and years. Models are sorted in decreasing order: the first is the best whereas the last is the worst. The difference in ELPD (elpd_diff) between the two models is considerably high, this means that the 2 models have different predictive performance. Moreover, 
-it is notable how taking the year into consideration leads to significantly better results.
+
 
 # Predictive performance assessment
 
 # Alternative priors testing
 
+We tried to change the parameters of the $\Gamma$ distribution, using a distribution with a shorter support, so more informative
+
+```{r}
+prior2 <- c(
+    prior(gamma(0.01,0.01), class = sd),
+    prior(gamma(0.01,0.01), class = phi)
+   )
+
+# basic model
+fit_basic2 <- brm(
+  formula = prop_trans ~ 0 + (1 | rider_name) + (1 | team_name),
+  family  = Beta(),
+  data    = data,
+  prior = prior2,
+  backend = "cmdstanr",
+  chains  = 4,
+  cores   = 6,
+  threads = 3,
+  warmup  = 1000,
+  iter    = 3500
+)
+
+summary(fit_basic2)
+```
+
+```{r}
+fit_year2 <- brm(
+  formula = prop_trans ~ 0 + (1 | rider_name) + (1 | rider_name:year) + (1 | team_name)  + (1|team_name:year),
+  family  = Beta(),
+  data    = data,
+  prior = prior2,
+  backend = "cmdstanr",
+  chains  = 4,
+  cores   = 6,
+  warmup  = 1000,
+  iter    = 3500
+)
+
+summary(fit_year2)
+```
+
+We can see that also with a smaller support, the results are almost the same
+
+We then tried to use the standard priors in brms, that are showed in the output:
+
+```{r}
+# basic model
+fit_basic3 <- brm(
+  formula = prop_trans ~ 0 + (1 | rider_name) + (1 | team_name),
+  family  = Beta(),
+  data    = data,
+  backend = "cmdstanr",
+  chains  = 4,
+  cores   = 6,
+  threads = 3,
+  warmup  = 1000,
+  iter    = 3500
+)
+
+prior_summary(fit_basic3)
+```
+
+```{r}
+summary(fit_basic3)
+```
+
+```{r}
+fit_year3 <- brm(
+  formula = prop_trans ~ 0 + (1 | rider_name) + (1 | rider_name:year) + (1 | team_name)  + (1|team_name:year),
+  family  = Beta(),
+  data    = data,
+  backend = "cmdstanr",
+  chains  = 4,
+  cores   = 6,
+  warmup  = 1000,
+  iter    = 3500
+)
+
+prior_summary(fit_year3)
+```
+
+```{r}
+summary(fit_year3)
+```
+
+Also in this case, the changes are negligible
 
 # Problems and potential improvements
 During the project, we encountered some problems. The first issue was finding an idea and a reliable data set. After that, the initial idea was to use Stan with the data in the form of a matrix of observations and drivers However, this approach would have created multiple null entries (NA values) which are hard to handle using Stan. Therefore, we decided to switch to the brms library, which handles null entries automatically. The main difficulty was figuring out how to choose priors, in particular, how to define hyper-parameters. Moreover, defining priors in brms has been challenging and it took some time.
