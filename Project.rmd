@@ -292,7 +292,7 @@ loo_results <- loo_compare(
 loo_results
 ```
 
-Comparing the models, the best one is the model described by drivers, constructors and years. Models are sorted in decreasing order: the first is the best whereas the last is the worst. The difference in ELPD (elpd_diff) between the two models is considerably high, this means that the 2 models have different predictive performance. Moreover, 
+Comparing the models, the best one is the model described by drivers, constructors and years. Models are sorted in decreasing order: the first is the best whereas the last is the worst. The difference in ELPD (elpd_diff) between the two models is considerably high, this means that the 2 models have very different predictive performance. Moreover, 
 it is notable how taking the year into consideration leads to significantly better results.
 
 # Predictive performance assessment
