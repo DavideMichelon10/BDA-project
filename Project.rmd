@@ -295,8 +295,12 @@ A rule of thumb is that if $\hat{R}$ < 1.01 we don't need to increase the number
 # Effective sample size diagnostic (n_eff)
 
 ```{r}
-print(fit_year)
+summary(fit_basic)
+summary(fit_year)
 ```
+The ess_bulk function produces an estimated Bulk Effective Sample Size (bulk-ESS) using rank normalized draws whereas the ess_tail function produces an estimated Tail Effective Sample Size (tail-ESS) by computing the minimum of effective sample sizes for 5% and 95% quantiles.
+For each parameter, both Bulk-ESS and Tail-ESS are bigger than 100 (approximately) per Markov Chain which means that they are reliable and indicate that estimates of respective posterior quantiles are reliable.
+
 
 
 # Posterior predictive checking and interpretation 
