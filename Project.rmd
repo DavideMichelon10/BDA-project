@@ -16,7 +16,6 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r, include=FALSE}
-
 library(pracma)
 library(posterior)
 library(cmdstanr)
@@ -26,7 +25,7 @@ library(loo)
 library(dplyr)
 library(tidyr)
 library(brms)
-library(firatheme)
+#library(firatheme)
 # library(tidyverse)
 
 cmdstanr::check_cmdstan_toolchain(fix = TRUE)
@@ -192,6 +191,81 @@ So here we also included the seasonal driver form parameter βds, which represen
 We choose a weakly informative for the $\Phi$ parameters and weakly informative hyperpriors for the $\sigma$ parameters in both the models.
 Indeed a $\Gamma(1,1)$ is a common choice, since it is a distribution that starting from 0 start decreasing with a "Gaussian like trend": it behaves similar to the right tail of a Gaussian or a Cauchy centered in 0.  
 
+```
+list_drivers = list(y_riders = driver_prop, N = nrow(driver_prop), J_riders = ncol(driver_prop))
+# fit_driver <- hierarchical_model_d$sample(data = list_drivers, refresh=1000)
+```
+
+```{r}
+prior <- c(
+    prior(gamma(1,1), class = sd),
+    prior(gamma(1,1), class = phi)
+   )
+# basic model
+fit_basic <- brm(
+  formula = prop_trans ~ 0 + (1 | rider_name) + (1 | team_name),
+  family  = Beta(),
+  data    = data,
+  prior = prior,
+  backend = "cmdstanr",
+  chains  = 4,
+  cores   = 6,
+  threads = 3,
+  warmup  = 1000,
+  iter    = 3500
+)
+write_rds(fit_basic, "./fit/fit_basic.rds")
+```
+
+
+```{r}
+#fit_basic = readRDS("./fit/fit_basic.rds") %>% add_criterion("loo")
+summary(fit_basic)
+```
+
+
+```{r}
+# year model
+fit_year <- brm(
+  formula = prop_trans ~ 0 + (1 | rider_name) + (1 | team_name) + (1 | rider_name:year) + (1|team_name:year),
+  family  = Beta(),
+  prior = prior,
+  data    = data,
+  backend = "cmdstanr",
+  chains  = 4,
+  cores   = 6,
+  threads = 2,
+  warmup  = 1000,
+  iter    = 3500
+)
+write_rds(fit_year, "./fit/fit_year.rds")
+```
+
+```{r}
+#fit_year = readRDS("./fit/fit_year.rds") %>% add_criterion("loo")
+summary(fit_year)
+```
+
+```{r}
+library(nlmeU)
+library(corrplot)
+library(nlme)
+library(lattice)
+library(plot.matrix)
+library(lme4)
+library(insight)
+a = ranef(fit_year)
+dotplot(a$rider_name)
+```
+
+
+```{r}
+mcmc_plot(fit_year, type = "trace") +
+  facet_wrap(~parameter, nrow = 6, scales = "free")
+```
+
+
+
 # Rhat convergence diagnostics and interpretation
 
 Basic model
@@ -219,6 +293,11 @@ A rule of thumb is that if $\hat{R}$ < 1.01 we don't need to increase the number
 #  HMC specific convergence diagnostics
 
 # Effective sample size diagnostic (n_eff)
+
+```{r}
+print(fit_year)
+```
+
 
 # Posterior predictive checking and interpretation 
 
@@ -292,7 +371,7 @@ loo_results <- loo_compare(
 loo_results
 ```
 
-Comparing the models, the best one is the model described by drivers, constructors and years. Models are sorted in decreasing order: the first is the best whereas the last is the worst. The difference in ELPD (elpd_diff) between the two models is considerably high, this means that the 2 models have very different predictive performance. Moreover, 
+Comparing the models, the best one is the model described by drivers, constructors and years. Models are sorted in decreasing order: the first is the best whereas the last is the worst. The difference in ELPD (elpd_diff) between the two models is considerably high, this means that the 2 models have different predictive performance. Moreover, 
 it is notable how taking the year into consideration leads to significantly better results.
 
 # Predictive performance assessment
