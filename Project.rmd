@@ -49,7 +49,7 @@ The dataset used is public on the website at this [link](https://observablehq.co
 
 ## Data Preparation
 
-```
+```{r, eval=FALSE}
 test_data_driver <- data.frame(
   rider_name = data$rider_name,
   posx = data$prop_trans,
@@ -128,7 +128,7 @@ ggplot(data, aes(x = factor(position))) +
     y = "Count"
   )
 ```
-Dire che non ce ne sono sempre 22 perchè non tutti arrivano in fondo
+
 
 ```{r}
 data %>%
@@ -191,121 +191,6 @@ So here we also included the seasonal driver form parameter βds, which represen
 
 We choose a weakly informative for the $\Phi$ parameters and weakly informative hyperpriors for the $\sigma$ parameters in both the models.
 Indeed a $\Gamma(1,1)$ is a common choice, since it is a distribution that starting from 0 start decreasing with a "Gaussian like trend": it behaves similar to the right tail of a Gaussian or a Cauchy centered in 0.  
-
-# Stan models
-
-{output.var="hierarchical_model_d"}
-data { 
-  int<lower=0> N; #number of races
-  int<lower=0> J_riders; #number of riders
-  matrix[N, J_riders] y_riders; 
-}
-
-parameters {
-  vector[J_riders] mu_riders; 
-  real <lower=0> sigma;
-  real <lower=0> sigma_hyp;
-}
-
-transformed parameters {
-  vector[J_riders] mu = inv_logit(mu_riders);
-}
-
-model {
-  //Priors
-  for (j in 1:J_riders){
-      mu_riders[j] ~ normal(0, sigma_hyp);
-  }
-  
-  sigma ~ gamma(1,1);
-  
-  //Likelihood
-  for (j in 1:J_riders){
-    //mu[i] = inv_logit(mu_teams[i])
-    y_riders[,j] ~ beta(mu[j]*sigma, (1-mu[j])*sigma);
-  }
-
-}
-
-```
-list_drivers = list(y_riders = driver_prop, N = nrow(driver_prop), J_riders = ncol(driver_prop))
-# fit_driver <- hierarchical_model_d$sample(data = list_drivers, refresh=1000)
-
-```
-
-```{r}
-prior <- c(
-    prior(gamma(1,1), class = sd),
-    prior(gamma(1,1), class = phi)
-   )
-
-# basic model
-fit_basic <- brm(
-  formula = prop_trans ~ 0 + (1 | rider_name) + (1 | team_name),
-  family  = Beta(),
-  data    = data,
-  prior = prior,
-  backend = "cmdstanr",
-  chains  = 4,
-  cores   = 6,
-  threads = 3,
-  warmup  = 1000,
-  iter    = 3500
-)
-
-write_rds(fit_basic, "./fit/fit_basic.rds")
-```
-
-
-```{r}
-#fit_basic = readRDS("./fit/fit_basic.rds") %>% add_criterion("loo")
-summary(fit_basic)
-```
-
-
-```{r}
-# year model
-
-fit_year <- brm(
-  formula = prop_trans ~ 0 + (1 | rider_name) + (1 | team_name) + (1 | rider_name:year) + (1|team_name:year),
-  family  = Beta(),
-  prior = prior,
-  data    = data,
-  backend = "cmdstanr",
-  chains  = 4,
-  cores   = 6,
-  threads = 2,
-  warmup  = 1000,
-  iter    = 3500
-)
-
-write_rds(fit_year, "./fit/fit_year.rds")
-```
-
-
-```{r}
-#fit_year = readRDS("./fit/fit_year.rds") %>% add_criterion("loo")
-summary(fit_year)
-```
-
-```{r}
-library(nlmeU)
-library(corrplot)
-library(nlme)
-library(lattice)
-library(plot.matrix)
-library(lme4)
-library(insight)
-a = ranef(fit_year)
-dotplot(a$rider_name)
-```
-
-
-```{r}
-mcmc_plot(fit_year, type = "trace") +
-  facet_wrap(~parameter, nrow = 6, scales = "free")
-```
-
 
 # Rhat convergence diagnostics and interpretation
 
@@ -407,6 +292,8 @@ loo_results <- loo_compare(
 loo_results
 ```
 
+Comparing the models, the best one is the model described by drivers, constructors and years. Models are sorted in decreasing order: the first is the best whereas the last is the worst. The difference in ELPD (elpd_diff) between the two models is considerably high, this means that the 2 models have different predictive performance. Moreover, 
+it is notable how taking the year into consideration leads to significantly better results.
 
 # Predictive performance assessment
 
