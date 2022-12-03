@@ -16,17 +16,18 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r, include=FALSE}
-library(pracma)
+
 library(posterior)
-library(cmdstanr)
-library(rstan)
-library(ggplot2)
 library(loo)
-library(dplyr)
-library(tidyr)
 library(brms)
-#library(firatheme)
-# library(tidyverse)
+library(nlmeU)
+library(corrplot)
+library(nlme)
+library(lattice)
+library(plot.matrix)
+library(insight)
+library(firatheme)
+library(tidyverse)
 
 cmdstanr::check_cmdstan_toolchain(fix = TRUE)
 
@@ -47,42 +48,6 @@ The dataset used is public on the website at this [link](https://observablehq.co
 (e) position: final position for a specific driver in a specific race.
 
 ## Data Preparation
-
-```{r, eval=FALSE}
-test_data_driver <- data.frame(
-  rider_name = data$rider_name,
-  posx = data$prop_trans,
-  sequence = data$year*data$sequence
-  
-)
-
-driver_prop <- test_data_driver %>% pivot_wider(names_from = rider_name, values_from = posx)
-
-test_data_constr <- data.frame(
-  team_name = data$team_name,
-  pos = data$prop_trans,
-  sequence = data$year*data$sequence
-  
-)
-
-team_prop <- test_data_constr %>% pivot_wider(names_from = team_name, values_from = pos) 
-
-
-
-for(i in c(2:ncol(team_prop))){
-  temp <- team_prop[,i]
-  team_prop[,i] = lapply(temp, function(x) lapply(x, mean))
-}
-
-save(team_prop,file="team_prop.Rda")
-save(driver_prop,file="driver_prop.Rda")
-```
-
-```{r}
-load("./team_prop.Rda")
-load("./driver_prop.Rda")
-```
-
 
 ## Some EDA ----
 
@@ -247,13 +212,7 @@ summary(fit_year)
 ```
 
 ```{r}
-library(nlmeU)
-library(corrplot)
-library(nlme)
-library(lattice)
-library(plot.matrix)
-library(lme4)
-library(insight)
+
 a = ranef(fit_year)
 dotplot(a$rider_name)
 ```
@@ -292,6 +251,20 @@ A rule of thumb is that if $\hat{R}$ < 1.01 we don't need to increase the number
 
 #  HMC specific convergence diagnostics
 
+The HMC chains convergence can be determined by plotting the individual chains that have been executed for the main model parameters 
+
+```{r}
+hmc_conv <- mcmc_plot(fit_year, type = "trace") +
+            facet_wrap(~parameter, nrow = 6, scales = "free") +
+            scale_colour_brewer(type = "seq", palette = "Spectral")
+            #theme_fira() +
+            #scale_colour_fira()
+
+hmc_conv
+```
+By visual inspection it can be seen how the chains for the different parameters have converged. 
+
+
 # Effective sample size diagnostic (n_eff)
 
 ```{r}
@@ -305,12 +278,15 @@ For each parameter, both Bulk-ESS and Tail-ESS are bigger than 100 (approximatel
 
 # Posterior predictive checking and interpretation 
 
+Posterior predictive checks are an integral part of a Bayesian workflow, where we simulate the data we expect $\tilde{y}$ based on the model posterior, and we compare it with the observed data $y$, to see whether there's consistency. Basically, if $\tilde y$ is similar to $y$, then the model encapsulates the outcome well. In this case, we decided to run the posterior predictive checks on two different years, one in 2012 and one 2021 since there have been changes to both the rider roaster and teams between nine years. 
+
 ```{r}
-# 2019 posterior predictive check ----
-# create drivers & constructors in 2019
+# 2021 posterior predictive check ----
+
 pred_tab <-
   data %>%
-  filter(year == 2019) %>%
+  filter(year == 2021) %>%
+  filter(!(rider_name %in% c("Pedrosa, Dani","Gerloff, Garrett","Dixon, Jake"))) %>% 
   select(rider_name, team_name, year)
 
 # predict proportion of outperformed drivers
@@ -332,7 +308,8 @@ pred_tab_long <-
 # y
 true_tab_long <-
   data %>%
-  filter(year == 2019) %>%
+  filter(year == 2021) %>%
+  filter(!(rider_name %in% c("Pedrosa, Dani","Gerloff, Garrett","Dixon, Jake")))%>% 
   select(rider_name, team_name, year, prop_trans) %>%
   mutate(origin = "observed")
 
@@ -345,23 +322,94 @@ ordered_levels <-
   as.character()
 
 
-bind_rows(pred_tab_long, true_tab_long) %>%
-  ggplot(aes(x = prop_trans, fill = origin)) +
-  geom_density(alpha = 0.8, bw = .07) +
-  facet_wrap(~factor(rider_name, levels = ordered_levels), scales = "free") +
-  xlim(0, 1) +
-  theme_fira() +
-  scale_fill_fira() +
-  theme(legend.position = "top") +
-  labs(
-    title = "2019 season posterior predictive check",
-    x = "Proportion of outperformed drivers",
-    y = "",
-    fill = ""
-  )
+PPC_2021 <- bind_rows(pred_tab_long, true_tab_long) %>%
+            ggplot(aes(x = prop_trans, fill = origin)) +
+            geom_density(alpha = 0.8, bw = .07) +
+            facet_wrap(~factor(rider_name, levels = ordered_levels), scales = "free") +
+            xlim(0, 1) +
+            #theme_fira() +
+            #scale_fill_fira() +
+            #theme(legend.position = "top") +
+            labs(
+              title = "Posterior predictive check",
+              subtitle = "2021 season",
+              x = "Proportion of outperformed riders",
+              y = "",
+              fill = ""
+            )
 
+PPC_2021
 ```
+Note: In the 2021 season riders Dani Pedrosa, Jake Dixon and Gerloff Garrett participated in one race each, so they have been excluded from the posterior predictive check. 
 
+```{r}
+# 2012 posterior predictive check ----
+
+pred_tab <-
+  data %>%
+  filter(year == 2012) %>%
+  filter(!(rider_name %in% c("Rapp, Steve","Battaini, Franco","Aoyama, Hiroshi","Vermeulen, Chris",
+                         "Salom, David","Rolfo, Roberto", "Yates, Aaron"))) %>% 
+  select(rider_name, team_name, year)
+
+# predict proportion of outperformed drivers
+pp_tab <- posterior_predict(fit_year, pred_tab)
+
+## Proportion plot ----
+# yrep
+pred_tab_long <-
+  pred_tab %>%
+  bind_cols(t(pp_tab) %>% as_tibble(.name_repair = "minimal") %>% 
+  set_names(1:10000)) %>%
+  pivot_longer(
+    cols      = c(-rider_name, -team_name, -year),
+    names_to  = "sample",
+    values_to = "prop_trans"
+  ) %>%
+  mutate(origin = "simulated")
+
+# y
+true_tab_long <-
+  data %>%
+  filter(year == 2012) %>%
+  filter(!(rider_name %in%c("Rapp, Steve","Battaini, Franco","Aoyama, Hiroshi","Vermeulen, Chris",
+                         "Salom, David","Rolfo, Roberto", "Yates, Aaron"))) %>% 
+  select(rider_name, team_name, year, prop_trans) %>%
+  mutate(origin = "observed")
+
+ordered_levels <-
+  true_tab_long %>%
+  group_by(rider_name) %>%
+  summarise(prop = mean(prop_trans)) %>%
+  arrange(-prop) %>%
+  pull(rider_name) %>%
+  as.character()
+
+
+PPC_2012 <- bind_rows(pred_tab_long, true_tab_long) %>%
+            ggplot(aes(x = prop_trans, fill = origin)) +
+            geom_density(alpha = 0.8, bw = .07) +
+            facet_wrap(~factor(rider_name, levels = ordered_levels), scales = "free") +
+            xlim(0, 1) +
+            #theme_fira() +
+            #scale_fill_fira() +
+            #theme(legend.position = "top") +
+            labs(
+              title = "Posterior predictive check",
+              subtitle = "2012 season",
+              x = "Proportion of outperformed riders",
+              y = "",
+              fill = ""
+            ) +
+            scale_colour_brewer(type = "seq", palette = "Spectral")
+
+PPC_2012
+```
+Note: in the 2012 season riders Aaron Yates, Chris Vermeulen, David Salom, Franco Battaini, Hiroshi Aoyama, Steve Rapp & Roberto Rolfo have been excluded since each of them had taken part in one Grand Prix. 
+
+Both the plots show acceptable simulated values for each individual rider. One important thing to note is that for consistent high-performers (ex. Quartararo Fabio - 2021, Lorenzo Jorge - 2012) and low-performers (Salvadori Lorenzo - 2021), the posterior predictive distribution is under-dispersed, indicating a high value for \phi in these cases. 
+On the other hand, for riders in the midfield (Marquez Alex - 2021, Jonathan Rea - 2012), the posterior predictive distribution seems to be a bit over-dispersed (low value of $\phi$), since there is more variation in observed data. 
+But it can be seen that in both cases, the mean estimates do not seem too biased (especially in the midfield) so, we conclude that the model fits the observed data satisfyingly. 
 
 # Model comparison and interpretation of the results
 
