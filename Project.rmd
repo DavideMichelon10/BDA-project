@@ -174,7 +174,7 @@ $\begin{align*} y_{dc} \sim {\sf Beta}(\mu_{dc},\Phi) \\ logit(\mu_{dc}) = \beta
 
 The Beta distribution of the model does not follow the standard $(\alpha,\beta)$ parametrization, but rather a Beta regression formulation with a mean parameter $\mu$ and a dispersion parameter $\Phi$ (Ferrari and Cribari-Neto, 2004).
 
-In particular, 
+In particular, for regression analysis it is useful to model the mean of the response. Also it is typical to define the model so that it contains a precision (dispersion) parameter. In order to do that we can define $$\mu = \frac{\alpha}{\alpha+\beta}$$ and $$\Phi = \alpha + \beta$$ so that $$E(y) = \mu$$ and $$var(y) = \frac{\mu(1-\mu)}{1+\Phi}$$. such that $\mu$ is the mean of the response variable and $\Phi$ can be interpreted as a precision parameter
 
 The (hypothetical) average driver at an average team will on
 average have $\mu_{dc}$ = 0, which translates into a probability of 0.5 of beating other drivers.
@@ -189,7 +189,8 @@ So here we also included the seasonal driver form parameter βds, which represen
 
 ## Priors
 
-weakly ...
+We choose a weakly informative for the $\Phi$ parameters and weakly informative hyperpriors for the $\sigma$ parameters in both the models.
+Indeed a $\Gamma(1,1)$ is a common choice, since it is a distribution that starting from 0 start decreasing with a "Gaussian like trend": it behaves similar to the right tail of a Gaussian or a Cauchy centered in 0.  
 
 # Stan models
 

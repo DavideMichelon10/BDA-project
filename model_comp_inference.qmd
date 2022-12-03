@@ -61,7 +61,7 @@ data <- data %>% group_by(year, sequence) %>% mutate(
 ```{r}
 prior2 <- c(
     prior(gamma(1,1), class = sd),
-    prior(gamma(0.01,0.01), class = phi)
+    prior(gamma(1,1), class = phi)
    )
 ```
 
@@ -70,7 +70,6 @@ fit_basic <- brm(
   formula = prop_trans ~ 0 + (1 | rider_name) + (1 | team_name),
   family  = Beta(),
   data    = data,
-  prior = prior2,
   backend = "cmdstanr",
   chains  = 4,
   cores   = 6,
@@ -78,7 +77,7 @@ fit_basic <- brm(
   iter    = 3500
 )
 
-write_rds(fit_basic, "./fit/fit_basic.rds")
+#write_rds(fit_basic, "./fit/fit_basic.rds")
 ```
 
 
@@ -91,7 +90,6 @@ prior_summary(fit_basic)
 fit_year <- brm(
   formula = prop_trans ~ 0 + (1 | rider_name) + (1 | rider_name:year) + (1 | team_name)  + (1|team_name:year),
   family  = Beta(),
-  prior = prior2,
   data    = data,
   backend = "cmdstanr",
   chains  = 4,
@@ -228,3 +226,44 @@ colSums(ranef_summary[1:2,]^2)/colSums(ranef_summary^2)
 colSums(ranef_summary[3:4,]^2)/colSums(ranef_summary^2)
 ```
 
+## different priors
+
+```{r}
+# basic model
+fit_basic3 <- brm(
+  formula = prop_trans ~ 0 + (1 | rider_name) + (1 | team_name),
+  family  = Beta(),
+  data    = data,
+  backend = "cmdstanr",
+  chains  = 4,
+  cores   = 6,
+  threads = 3,
+  warmup  = 1000,
+  iter    = 3500
+)
+
+prior_summary(fit_basic3)
+```
+
+```{r}
+summary(fit_basic3)
+```
+
+```{r}
+fit_year3 <- brm(
+  formula = prop_trans ~ 0 + (1 | rider_name) + (1 | rider_name:year) + (1 | team_name)  + (1|team_name:year),
+  family  = Beta(),
+  data    = data,
+  backend = "cmdstanr",
+  chains  = 4,
+  cores   = 6,
+  warmup  = 1000,
+  iter    = 3500
+)
+
+prior_summary(fit_year3)
+```
+
+```{r}
+summary(fit_year3)
+```
