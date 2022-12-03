@@ -211,20 +211,6 @@ write_rds(fit_year, "./fit/fit_year.rds")
 summary(fit_year)
 ```
 
-```{r}
-
-a = ranef(fit_year)
-dotplot(a$rider_name)
-```
-
-
-```{r}
-mcmc_plot(fit_year, type = "trace") +
-  facet_wrap(~parameter, nrow = 6, scales = "free")
-```
-
-
-
 # Rhat convergence diagnostics and interpretation
 
 Basic model
@@ -257,8 +243,6 @@ The HMC chains convergence can be determined by plotting the individual chains t
 hmc_conv <- mcmc_plot(fit_year, type = "trace") +
             facet_wrap(~parameter, nrow = 6, scales = "free") +
             scale_colour_brewer(type = "seq", palette = "Spectral")
-            #theme_fira() +
-            #scale_colour_fira()
 
 hmc_conv
 ```
@@ -408,7 +392,7 @@ PPC_2012
 Note: in the 2012 season riders Aaron Yates, Chris Vermeulen, David Salom, Franco Battaini, Hiroshi Aoyama, Steve Rapp & Roberto Rolfo have been excluded since each of them had taken part in one Grand Prix. 
 
 Both the plots show acceptable simulated values for each individual rider. One important thing to note is that for consistent high-performers (ex. Quartararo Fabio - 2021, Lorenzo Jorge - 2012) and low-performers (Salvadori Lorenzo - 2021), the posterior predictive distribution is under-dispersed, indicating a high value for \phi in these cases. 
-On the other hand, for riders in the midfield (Marquez Alex - 2021, Jonathan Rea - 2012), the posterior predictive distribution seems to be a bit over-dispersed (low value of $\phi$), since there is more variation in observed data. 
+On the other hand, for riders in the midfield (Marquez Alex - 2021, Jonathan Rea - 2012), the posterior predictive distribution seems to be a bit over-dispersed (low value of $\phi$), since there is more variation in the observed data. 
 But it can be seen that in both cases, the mean estimates do not seem too biased (especially in the midfield) so, we conclude that the model fits the observed data satisfyingly. 
 
 # Model comparison and interpretation of the results
@@ -425,6 +409,88 @@ loo_results
 
 Comparing the models, the best one is the model described by drivers, constructors and years. Models are sorted in decreasing order: the first is the best whereas the last is the worst. The difference in ELPD (elpd_diff) between the two models is considerably high, this means that the 2 models have different predictive performance. Moreover, 
 it is notable how taking the year into consideration leads to significantly better results.
+
+## Interpretation of the results
+
+Since the yearly model is better according to the LOO estimate, we proceed our inferences with it. To determine which rider is the most skilled, we decided to make inferences for a reducted set of riders from the 2012-2021 period (Rossi, Pedrosa, Crutchlow, )
+
+The model contains a parameter that indicates the seasonal form for each of the riders, $\beta_{rs}$, so we can project the skill trajectories for each of them throughout the years, while taking into consideration any advantages due to team form or any hidden parameter uncertainties. This is done by obtaining the posterior means and the 95% credible intervals for $\beta_{r} + \beta_{rs}$ on the set of riders, for each year 
+
+```{r}
+riders_focus <- c("Rossi","Crutchlow","Quartararo","Dovizioso")
+rider_mean <- as_draws_df(fit_year) %>% select(-.chain, -.iteration) %>% select(contains("r_rider_name"),.draw) %>% select(-contains("year"))
+rider_form <- as_draws_df(fit_year) %>% select(-.chain,-.iteration) %>% select(contains("r_rider_name:year"),.draw)
+```
+
+```{r}
+rider_mean_long <-
+  rider_mean  %>%
+  pivot_longer(-.draw, names_to = "Rider", values_to = "Skill",
+               names_pattern = "\\[(\\w{1,10}.*?),..*?\\]") %>% 
+  mutate(Rider = as.factor(Rider))
+
+rider_form_long <-
+  rider_form %>%
+  pivot_longer(-.draw, names_to = c("Rider", "Year"), values_to = "Form",
+               names_pattern = "\\[(\\w{1,10}).*?(\\d{1,4}).*?,") %>%
+  mutate(Rider = as.factor(Rider), Year = as.integer(Year))
+
+rider_skill_summary <-
+  merge(x=rider_form_long, y=rider_mean_long, by = c("Rider",".draw")) %>%
+  mutate(skill_yr = Form + Skill) %>%
+  group_by(Rider, Year) %>%
+  summarise(
+    est = mean(skill_yr),
+    lower = quantile(skill_yr, 0.025),
+    upper = quantile(skill_yr, 0.975),
+  )
+
+
+plt_skill_trajectory <-
+  rider_skill_summary %>%
+  ungroup() %>%
+  filter(Rider %in% riders_focus) %>%
+  mutate(Rider = fct_reorder(Rider, -est)) %>%
+  ggplot(aes(x = Year, y = est, ymin = lower, ymax = upper)) +
+  geom_ribbon(aes(fill = Rider), alpha = .2) +
+  geom_line(aes(colour = Rider)) +
+  geom_point(aes(colour = Rider)) +
+  scale_fill_fira(guide = "none") +
+  scale_colour_fira(guide = "none") +
+  #theme_fira() +
+  facet_wrap(~Rider) +
+  labs(x = "Season", y = "Skill (log odds ratio)", title = "MotoGP Rider skill trajectories",
+       subtitle = "period (2012-2021) Rider skill,\nconsidering for yearly team advantage.")
+
+
+plt_skill_trajectory
+```
+The figure shows slight deviations in skills during the seasons, continue...
+
+A ranking based on sill can also be produced, by focusing on a single year, which is useful to produce on the latest year available in the dataset (2021)
+```{r}
+plt_rider_skill_2021 <-
+  rider_skill_summary %>%
+  ungroup() %>%
+  filter(Year == 2021) %>%
+  mutate(Rider = fct_reorder(Rider, est)) %>%
+  ggplot(aes(y = Rider, x = est, xmin = lower, xmax = upper)) +
+  geom_pointrange(colour = firaCols[3]) +
+  #theme_fira() +
+  labs(title = "2021 MotoGP rider skill",
+       subtitle = "Accounting for yearly team advantage.",
+       x = "Skill (log odds ratio)",
+       y = "Rider")
+
+plt_rider_skill_2021
+```
+
+In the 2021 grid, based on the figure above it can be inferred that Quartararo is one of the most skilled drivers.
+The reason behind the wide confidence interval with Marc Marquez is due to him missing the 2020 season (1 start), and some races in the 2021 season. This combined with the fact that he has a high skill ranking due to producing high-performance results creates this level of uncertainity in his skill level. (Even if the inference is only on the 2021 season $\beta{r$} takes into account all the seasons (? check)). 
+
+**TO ADD TEAM ADVANTAGE + COUNTERFACTUAL FOR QUARTARARO IN ANOTHER TEAM**
+
+
 
 # Predictive performance assessment
 
