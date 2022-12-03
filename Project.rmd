@@ -73,6 +73,14 @@ data <- data %>% group_by(year, sequence) %>% mutate(
   position_prop = (n() - position) / (n() - 1),        
   prop_trans = (position_prop * (n() - 1) + 0.5) / n() 
   )
+
+data <- data %>% 
+  mutate(
+    team_name = case_when(team_name == "Movistar Yamaha MotoGP" ~ "Yamaha MotoGP",
+                          team_name == "Monster Energy Yamaha MotoGP" ~ "Yamaha MotoGP",
+                          team_name == "Yamaha Factory Racing" ~ "Yamaha MotoGP",
+                          TRUE ~ as.character(team_name))
+  )
 ```
 The variable position_prop represents how many rider_names you beat in a race, the variables position_trans is a transformation: Indeed The documentation for the R betareg package mentions that: "if y also assumes the extremes 0 and 1, a useful transformation in practice is (y * (n−1) + 0.5) / n where n is the sample size".
 
@@ -412,7 +420,7 @@ it is notable how taking the year into consideration leads to significantly bett
 
 ## Interpretation of the results
 
-Since the yearly model is better according to the LOO estimate, we proceed our inferences with it. To determine which rider is the most skilled, we decided to make inferences for a reducted set of riders from the 2012-2021 period (Rossi, Pedrosa, Crutchlow, )
+Since the yearly model is better according to the LOO estimate, we proceed our inferences with it. To determine which rider is the most skilled, we decided to make inferences for a reduced set of riders from the 2012-2021 period (Rossi, Pedrosa, Crutchlow, Quartararo )
 
 The model contains a parameter that indicates the seasonal form for each of the riders, $\beta_{rs}$, so we can project the skill trajectories for each of them throughout the years, while taking into consideration any advantages due to team form or any hidden parameter uncertainties. This is done by obtaining the posterior means and the 95% credible intervals for $\beta_{r} + \beta_{rs}$ on the set of riders, for each year 
 
@@ -467,7 +475,7 @@ plt_skill_trajectory
 ```
 The figure shows slight deviations in skills during the seasons, continue...
 
-A ranking based on sill can also be produced, by focusing on a single year, which is useful to produce on the latest year available in the dataset (2021)
+A ranking based on skill can also be produced, by focusing on a single year, which is useful to produce on the latest year available in the dataset (2021)
 ```{r}
 plt_rider_skill_2021 <-
   rider_skill_summary %>%
@@ -485,12 +493,106 @@ plt_rider_skill_2021 <-
 plt_rider_skill_2021
 ```
 
-In the 2021 grid, based on the figure above it can be inferred that Quartararo is one of the most skilled drivers.
-The reason behind the wide confidence interval with Marc Marquez is due to him missing the 2020 season (1 start), and some races in the 2021 season. This combined with the fact that he has a high skill ranking due to producing high-performance results creates this level of uncertainity in his skill level. (Even if the inference is only on the 2021 season $\beta{r$} takes into account all the seasons (? check)). 
+In the 2021 grid, based on the figure above, it can be inferred that Quartararo is one of the most skilled drivers.
+The reason behind the wide confidence interval with Marc Marquez is due to him missing the 2020 season (1 start), and some races in the 2021 season. This combined with the fact that he has a high skill ranking due to producing high-performance results creates this level of uncertainity around his skill level. (Even if the inference is only on the 2021 season $\beta{r$} takes into account all the seasons (? check)). 
 
 **TO ADD TEAM ADVANTAGE + COUNTERFACTUAL FOR QUARTARARO IN ANOTHER TEAM**
 
+To determine how much a given bike from a certain team yields, we can compute the posterior means and the 95% confidence intervals for $\beta_t$ from the model
 
+```{r}
+team_focus <- c("Yamaha MotoGP", "Team SUZUKI ECSTAR", "Repsol Honda Team", "Red Bull KTM Factory Racing", "Aprilia Racing Team Gresini")
+
+team_mean <- as_draws_df(fit_year) %>% select(-.chain, -.iteration) %>% select(contains("r_team_name"),.draw) %>% select(-contains("year"))
+team_form <- as_draws_df(fit_year) %>% select(-.chain, -.iteration) %>% select(contains("r_team_name:year"),.draw) 
+
+
+team_mean_long <-
+  team_mean  %>%
+  pivot_longer(-.draw, names_to = "Team", values_to = "Advantage",
+               names_pattern = "\\[(\\w{1,10}.\\w{1,10}.*?\\w{1,10}.*?),..*?\\]") %>%
+  mutate(Team = gsub("\\."," ", Team),Team = as_factor(Team))
+
+team_form_long <-
+  team_form %>%
+  pivot_longer(-.draw, names_to = c("Team", "Year"), values_to = "Form",
+               names_pattern = "\\[(\\w{1,10}.\\w{1,10}.*?\\w{1,10}.*?)_.*?(\\d{1,4}).*?") %>%
+  mutate(Team = gsub("\\."," ", Team), Team = as_factor(Team), Year = as.integer(Year))
+
+team_samples <-
+  merge(x=team_form_long, y=team_mean_long, by = c("Team",".draw")) %>%
+  mutate(advantage_yr = Form + Advantage)
+
+team_advantage_summary <-
+  team_samples %>%
+  group_by(Team, Year) %>%
+  summarise(
+    est = mean(advantage_yr),
+    lower = quantile(advantage_yr, 0.055),
+    upper = quantile(advantage_yr, 0.945),
+  )
+
+plt_advantage_trajectory <-
+  team_advantage_summary %>%
+  ungroup() %>% 
+  filter(Team %in% team_focus) %>%
+  mutate(Team = fct_relevel(Team, "Petronas Yamaha SRT", "Ducati Lenovo Team", "Repsol Honda Team", "Red Bull KTM Factory Racing", "Aprilia Racing Team Gresini")) %>% 
+  ggplot(aes(x = Year, y = est, ymin = lower, ymax = upper)) +
+  geom_ribbon(aes(fill = Team), alpha = .2) +
+  geom_line(aes(colour = Team)) +
+  geom_point(aes(colour = Team)) +
+  #scale_fill_fira(guide = "none") +
+  #scale_colour_fira(guide = "none") +
+  #theme_fira() +
+  facet_wrap(~Team) +
+  labs(x = "Season", y = "Advantage (log odds ratio)", title = "MotoGP team advantage trajectories",
+       subtitle = "Period (2012-2021) constructor advantage,\naccounting for yearly rider skill.")
+
+plt_advantage_trajectory
+```
+
+
+**(improve this section)**
+Did Quartararo getting into the official Yamaha team (in 2020) boost his prop_trans? To answer that question we put him in Petronas Yamaha SRT (Rossi's team in 2021) and put Rossi in Yamaha's official team, Monster Energy Yamaha MotoGP, Quartararo's team in 2021. Would Valentino Rossi have been able to beat Quartararo? (as an extra note, Rossi was in Yamaha's official team in 2019 and Quartararo was in SRT in 2019).
+
+To answer this question we compute the predicted proportion of riders beaten $\tilde y_{rt}$ for both of the riders and then compute the posterior difference $\delta$ as follows:
+
+$$\begin{align*}
+\tilde{y}_{quart:YMH_{SRT}:2021} &= \text{logit}^-1(\beta_{quart} + \beta_{quart:2021} + \beta_{YMH_{SRT}} + \beta_{YMH_{SRT}:2021})
+\\\tilde{y}_{rossi:YMH_{OFF}:2021} &= \text{logit}^-1(\beta_{rossi} + \beta_{rossi:2021} + \beta_{YMH_{OFF}} + \beta_{YMH_{OFF}:2021})
+\\ \delta &= \tilde{y}_{quart:YMH_{SRT}:2021} - \tilde{y}_{rossi:YMH_{OFF}:2021}
+\end{align*}$$
+
+```{r}
+rossi_yamaha_offical <- posterior_predict(fit_year, tibble(
+  year = 2021,
+  team_name = "Yamaha MotoGP",
+  rider_name = "Rossi, Valentino"
+))
+
+quartararo_yamaha_srt <- posterior_predict(fit_year, tibble(
+  year = 2021,
+  team_name = "Petronas Yamaha SRT",
+  rider_name = "Quartararo, Fabio"
+))
+
+delta <- quartararo_yamaha_srt - rossi_yamaha_offical
+
+counterfactual_plot <- ggplot(tibble(d = delta), aes(x = d)) +
+                      geom_density(fill = firaCols[5], alpha = 0.8) +
+                      geom_vline(xintercept = mean(delta)) +
+                      labs(
+                        title = "Counterfactual prediction",
+                        subtitle = "Quartararo in Yamaha SRT vs. Rossi in Yamaha official",
+                        x = "Quartararo-Yamaha SRT advantage",
+                        y = "Density"
+                      )
+counterfactual_plot
+```
+
+Based on this plot, it seems that even if Quartararo would have been traded to Yamaha SRT and Rossi to Yamaha Official, Quartararo is expected to have beaten Rossi regardless (with quite some degree of uncertainty). 
+
+This could answer the question: did Yamaha  make a good choice by moving Quartararo to the official team and "demoting" Rossi to the B team? It seems so (even if there is some uncertainty)
 
 # Predictive performance assessment
 
