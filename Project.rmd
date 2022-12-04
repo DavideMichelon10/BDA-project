@@ -625,24 +625,6 @@ prior2 <- c(
     prior(gamma(0.01,0.01), class = phi)
    )
 
-# basic model
-fit_basic2 <- brm(
-  formula = prop_trans ~ 0 + (1 | rider_name) + (1 | team_name),
-  family  = Beta(),
-  data    = data,
-  prior = prior2,
-  backend = "cmdstanr",
-  chains  = 4,
-  cores   = 6,
-  threads = 3,
-  warmup  = 1000,
-  iter    = 3500
-)
-
-summary(fit_basic2)
-```
-
-```
 fit_year2 <- brm(
   formula = prop_trans ~ 0 + (1 | rider_name) + (1 | rider_name:year) + (1 | team_name)  + (1|team_name:year),
   family  = Beta(),
@@ -655,33 +637,17 @@ fit_year2 <- brm(
   iter    = 3500
 )
 
+```
+
+```{r}
+fit_year2 <- read_rds("./fit/fit_year2.rds")
 summary(fit_year2)
 ```
+
 
 We can see that also with a smaller support, the results are almost the same
 
 We then tried to use the standard priors in brms, that are showed in the output:
-
-```
-# basic model
-fit_basic3 <- brm(
-  formula = prop_trans ~ 0 + (1 | rider_name) + (1 | team_name),
-  family  = Beta(),
-  data    = data,
-  backend = "cmdstanr",
-  chains  = 4,
-  cores   = 6,
-  threads = 3,
-  warmup  = 1000,
-  iter    = 3500
-)
-
-prior_summary(fit_basic3)
-```
-
-```
-summary(fit_basic3)
-```
 
 ```
 fit_year3 <- brm(
@@ -698,7 +664,8 @@ fit_year3 <- brm(
 prior_summary(fit_year3)
 ```
 
-```
+```{r}
+fit_year3 <- read_rds("./fit/fit_year3.rds")
 summary(fit_year3)
 ```
 
