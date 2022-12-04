@@ -29,6 +29,7 @@ library(insight)
 library(firatheme)
 library(tidyverse)
 library(extrafont)
+library(kableExtra)
 
 cmdstanr::check_cmdstan_toolchain(fix = TRUE)
 
@@ -318,6 +319,43 @@ By visual inspection it can be seen how the chains for the different parameters 
 summary(fit_basic)
 summary(fit_year)
 ```
+The Effective sample sizes are calculated via the `ess_bulk` and `ess_tail` function. The `ess_bulk` function produces an estimated Bulk Effective Sample Size (bulk-ESS) using rank normalized draws whereas the `ess_tail` function produces an estimated Tail Effective Sample Size (tail-ESS) by computing the minimum of effective sample sizes for 5% and 95% quantiles.
+For each parameter, both Bulk-ESS and Tail-ESS are bigger than 100 (approximately) per Markov Chain which means that they are reliable and indicate that estimates of respective posterior quantiles are reliable.
+
+For the basic model, the ESS values are:
+
+```{r,include=FALSE}
+draws_temp <- as_draws_df(fit_basic)
+sd_r_n <- extract_variable_matrix(draws_temp,"sd_rider_name__Intercept")
+sd_t_n <- extract_variable_matrix(draws_temp,"sd_team_name__Intercept")
+```
+
+```{r}
+ess_basic <- data.frame(Parameter = c("rider_name", "team_name"), 
+                 ESS_bulk = c(ess_bulk(sd_r_n), ess_bulk(sd_t_n)),
+                 ESS_tail = c(ess_tail(sd_r_n), ess_tail(sd_t_n)))
+kable(ess_basic, col.names = c("Parameter", "ESS_bulk","ESS_tail"), escape = F, caption = "Basic Model") %>%
+                    kable_styling(latex_options = "hold_position")
+```
+
+
+```{r,include=FALSE}
+draws_temp <- as_draws_df(fit_year)
+sd_r_n <- extract_variable_matrix(draws_temp,"sd_rider_name__Intercept")
+sd_r_n_y <- extract_variable_matrix(draws_temp,"sd_rider_name:year__Intercept")
+sd_t_n <- extract_variable_matrix(draws_temp,"sd_team_name__Intercept")
+sd_t_n_y <- extract_variable_matrix(draws_temp,"sd_team_name:year__Intercept")
+```
+
+```{r}
+ess_year <- data.frame(Parameter = c("rider_name", "rider_name:year","team_name", "team_name:year"), 
+                 ESS_bulk = c(ess_bulk(sd_r_n), ess_bulk(sd_r_n_y), ess_bulk(sd_t_n), ess_bulk(sd_t_n_y)),
+                 ESS_tail = c(ess_tail(sd_r_n), ess_tail(sd_r_n_y), ess_tail(sd_t_n), ess_tail(sd_t_n_y)))
+kable(ess_year, col.names = c("Parameter", "ESS_bulk", "ESS_tail"), escape = F, caption = "Yearly Model") %>%
+                    kable_styling(latex_options = "hold_position")
+```
+
+
 The ess_bulk function produces an estimated Bulk Effective Sample Size (bulk-ESS) using rank normalized draws whereas the ess_tail function produces an estimated Tail Effective Sample Size (tail-ESS) by computing the minimum of effective sample sizes for 5% and 95% quantiles.
 For each parameter, both Bulk-ESS and Tail-ESS are bigger than 100 (approximately) per Markov Chain which means that they are reliable and indicate that estimates of respective posterior quantiles are reliable.
 
