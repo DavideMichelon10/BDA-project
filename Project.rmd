@@ -31,7 +31,7 @@ library(tidyverse)
 
 cmdstanr::check_cmdstan_toolchain(fix = TRUE)
 
-register_knitr_engine(override = FALSE)
+#register_knitr_engine(override = FALSE)
 ```
 
 
@@ -151,7 +151,7 @@ In particular, for regression analysis it is useful to model the mean of the res
 The (hypothetical) average driver at an average team will on
 average have $\mu_{dc}$ = 0, which translates into a probability of 0.5 of beating other drivers.
 
-Then, $\Beta_{d}$ represents the mean driver skill as a log-odds ratio; e.g., if βd = 0:3, this means that the probability of beating other drivers is 1=(1 + e−0:3) ≈ 0:57.
+Then, $\beta_{d}$ represents the mean driver skill as a log-odds ratio; e.g., if $\beta_{d}$ = 0,3, this means that the probability of beating other drivers is $\frac{1}{1 + e^{-0.3}} \simeq 0.57$
 
 Taking into account that the performances of a driver can change over years (e.g. for his age or for his experience), and that also the quality of the motorbike can depends on the season (e.g. for new technologies) $y_{dcs}$:
 
@@ -169,7 +169,7 @@ list_drivers = list(y_riders = driver_prop, N = nrow(driver_prop), J_riders = nc
 # fit_driver <- hierarchical_model_d$sample(data = list_drivers, refresh=1000)
 ```
 
-```{r}
+```
 prior <- c(
     prior(gamma(1,1), class = sd),
     prior(gamma(1,1), class = phi)
@@ -192,12 +192,12 @@ write_rds(fit_basic, "./fit/fit_basic.rds")
 
 
 ```{r}
-#fit_basic = readRDS("./fit/fit_basic.rds") %>% add_criterion("loo")
+fit_basic = readRDS("./fit/fit_basic.rds") %>% add_criterion("loo")
 summary(fit_basic)
 ```
 
 
-```{r}
+```
 # year model
 fit_year <- brm(
   formula = prop_trans ~ 0 + (1 | rider_name) + (1 | team_name) + (1 | rider_name:year) + (1|team_name:year),
@@ -215,7 +215,7 @@ write_rds(fit_year, "./fit/fit_year.rds")
 ```
 
 ```{r}
-#fit_year = readRDS("./fit/fit_year.rds") %>% add_criterion("loo")
+fit_year = readRDS("./fit/fit_year.rds") %>% add_criterion("loo")
 summary(fit_year)
 ```
 
@@ -399,7 +399,7 @@ PPC_2012
 ```
 Note: in the 2012 season riders Aaron Yates, Chris Vermeulen, David Salom, Franco Battaini, Hiroshi Aoyama, Steve Rapp & Roberto Rolfo have been excluded since each of them had taken part in one Grand Prix. 
 
-Both the plots show acceptable simulated values for each individual rider. One important thing to note is that for consistent high-performers (ex. Quartararo Fabio - 2021, Lorenzo Jorge - 2012) and low-performers (Salvadori Lorenzo - 2021), the posterior predictive distribution is under-dispersed, indicating a high value for \phi in these cases. 
+Both the plots show acceptable simulated values for each individual rider. One important thing to note is that for consistent high-performers (ex. Quartararo Fabio - 2021, Lorenzo Jorge - 2012) and low-performers (Salvadori Lorenzo - 2021), the posterior predictive distribution is under-dispersed, indicating a high value for $\phi$ in these cases. 
 On the other hand, for riders in the midfield (Marquez Alex - 2021, Jonathan Rea - 2012), the posterior predictive distribution seems to be a bit over-dispersed (low value of $\phi$), since there is more variation in the observed data. 
 But it can be seen that in both cases, the mean estimates do not seem too biased (especially in the midfield) so, we conclude that the model fits the observed data satisfyingly. 
 
@@ -494,7 +494,7 @@ plt_rider_skill_2021
 ```
 
 In the 2021 grid, based on the figure above, it can be inferred that Quartararo is one of the most skilled drivers.
-The reason behind the wide confidence interval with Marc Marquez is due to him missing the 2020 season (1 start), and some races in the 2021 season. This combined with the fact that he has a high skill ranking due to producing high-performance results creates this level of uncertainity around his skill level. (Even if the inference is only on the 2021 season $\beta{r$} takes into account all the seasons (? check)). 
+The reason behind the wide confidence interval with Marc Marquez is due to him missing the 2020 season (1 start), and some races in the 2021 season. This combined with the fact that he has a high skill ranking due to producing high-performance results creates this level of uncertainity around his skill level. (Even if the inference is only on the 2021 season $\beta{r}$ takes into account all the seasons (? check)). 
 
 **TO ADD TEAM ADVANTAGE + COUNTERFACTUAL FOR QUARTARARO IN ANOTHER TEAM**
 
@@ -558,8 +558,8 @@ Did Quartararo getting into the official Yamaha team (in 2020) boost his prop_tr
 To answer this question we compute the predicted proportion of riders beaten $\tilde y_{rt}$ for both of the riders and then compute the posterior difference $\delta$ as follows:
 
 $$\begin{align*}
-\tilde{y}_{quart:YMH_{SRT}:2021} &= \text{logit}^-1(\beta_{quart} + \beta_{quart:2021} + \beta_{YMH_{SRT}} + \beta_{YMH_{SRT}:2021})
-\\\tilde{y}_{rossi:YMH_{OFF}:2021} &= \text{logit}^-1(\beta_{rossi} + \beta_{rossi:2021} + \beta_{YMH_{OFF}} + \beta_{YMH_{OFF}:2021})
+\tilde{y}_{quart:YMH_{SRT}:2021} &= \text{logit}^{-1}(\beta_{quart} + \beta_{quart:2021} + \beta_{YMH_{SRT}} + \beta_{YMH_{SRT}:2021})
+\\\tilde{y}_{rossi:YMH_{OFF}:2021} &= \text{logit}^{-1}(\beta_{rossi} + \beta_{rossi:2021} + \beta_{YMH_{OFF}} + \beta_{YMH_{OFF}:2021})
 \\ \delta &= \tilde{y}_{quart:YMH_{SRT}:2021} - \tilde{y}_{rossi:YMH_{OFF}:2021}
 \end{align*}$$
 
@@ -600,7 +600,7 @@ This could answer the question: did Yamaha  make a good choice by moving Quartar
 
 We tried to change the parameters of the $\Gamma$ distribution, using a distribution with a shorter support, so more informative
 
-```{r}
+```
 prior2 <- c(
     prior(gamma(0.01,0.01), class = sd),
     prior(gamma(0.01,0.01), class = phi)
@@ -623,7 +623,7 @@ fit_basic2 <- brm(
 summary(fit_basic2)
 ```
 
-```{r}
+```
 fit_year2 <- brm(
   formula = prop_trans ~ 0 + (1 | rider_name) + (1 | rider_name:year) + (1 | team_name)  + (1|team_name:year),
   family  = Beta(),
@@ -643,7 +643,7 @@ We can see that also with a smaller support, the results are almost the same
 
 We then tried to use the standard priors in brms, that are showed in the output:
 
-```{r}
+```
 # basic model
 fit_basic3 <- brm(
   formula = prop_trans ~ 0 + (1 | rider_name) + (1 | team_name),
@@ -660,11 +660,11 @@ fit_basic3 <- brm(
 prior_summary(fit_basic3)
 ```
 
-```{r}
+```
 summary(fit_basic3)
 ```
 
-```{r}
+```
 fit_year3 <- brm(
   formula = prop_trans ~ 0 + (1 | rider_name) + (1 | rider_name:year) + (1 | team_name)  + (1|team_name:year),
   family  = Beta(),
@@ -679,7 +679,7 @@ fit_year3 <- brm(
 prior_summary(fit_year3)
 ```
 
-```{r}
+```
 summary(fit_year3)
 ```
 
