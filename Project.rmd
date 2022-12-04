@@ -112,7 +112,7 @@ ggplot(data, aes(x = factor(position))) +
 ```
 This plot shows that sometimes not all drivers manage to finish the race.
 
-```{r}
+```{r,include=FALSE}
 data %>%
   filter(rider_name %in% c("Rossi, Valentino", "Quartararo, Fabio", "Marquez, Marc", "Lorenzo, Jorge")) %>%
   ggplot(aes(x = factor(position), fill = rider_name)) +
@@ -129,7 +129,6 @@ data %>%
   facet_wrap(~year)
 ```
 
-From the plot above, we can observe that many pilots are not always present: indeed some pilots retired before 2021, some others arrived later than 2012.
 
 ```{r}
 data %>%
@@ -146,7 +145,8 @@ data %>%
   theme(legend.position = "top", axis.text.x = element_text(angle = 45, vjust = 0.85)) +
   facet_wrap(~year)
 ```
-From the plot above we can see an interesting trend for the driver Marc Marquez : till 2019 he was one of the top drivers in MotoGP, than in 2020 he had a shoulder injury that made him skip almost every race, and in 2021 he had a considerable decline in his performances.
+From the plot above, we can observe that many pilots are not always present: indeed some pilots retired before 2021, some others arrived later than 2012.
+We can also see an interesting trend for the driver Marc Marquez : till 2019 he was one of the top drivers in MotoGP, than in 2020 he had a shoulder injury that made him skip almost every race, and in 2021 he had a considerable decline in his performances.
 
 # Description of the models
 
@@ -230,9 +230,8 @@ write_rds(fit_basic, "./fit/fit_basic.rds")
 ```
 
 
-```{r}
+```{r,include=FALSE}
 fit_basic = readRDS("./fit/fit_basic.rds") %>% add_criterion("loo")
-summary(fit_basic)
 ```
 
 
@@ -253,9 +252,8 @@ fit_year <- brm(
 write_rds(fit_year, "./fit/fit_year.rds")
 ```
 
-```{r}
+```{r,include=FALSE}
 fit_year = readRDS("./fit/fit_year.rds") %>% add_criterion("loo")
-summary(fit_year)
 ```
 
 # Rhat convergence diagnostics and interpretation
@@ -306,11 +304,28 @@ summary(fit_year)
 The ess_bulk function produces an estimated Bulk Effective Sample Size (bulk-ESS) using rank normalized draws whereas the ess_tail function produces an estimated Tail Effective Sample Size (tail-ESS) by computing the minimum of effective sample sizes for 5% and 95% quantiles.
 For each parameter, both Bulk-ESS and Tail-ESS are bigger than 100 (approximately) per Markov Chain which means that they are reliable and indicate that estimates of respective posterior quantiles are reliable.
 
+# Model comparison 
+
+```{r}
+loo_results <- loo_compare(
+  fit_basic,
+  fit_year,
+  model_names = c("Driver + constructor", "Driver + constructor + year")
+)
+
+loo_results
+```
+
+Comparing the models, the best one is the model described by drivers, constructors and years. Models are sorted in decreasing order: the first is the best whereas the last is the worst. The difference in ELPD (elpd_diff) between the two models is considerably high, this means that the 2 models have different predictive performance. Moreover, 
+it is notable how taking the year into consideration leads to significantly better results.
+
+Since the yearly model is better according to the LOO estimate, we proceed our inferences with it.
+
 # Posterior predictive checking and interpretation 
 
 Posterior predictive checks are an integral part of a Bayesian workflow, where we simulate the data we expect $\tilde{y}$ based on the model posterior, and we compare it with the observed data $y$, to see whether there's consistency. Basically, if $\tilde y$ is similar to $y$, then the model encapsulates the outcome well. In this case, we decided to run the posterior predictive checks on two different years, one in 2012 and one 2021 since there have been changes to both the rider roaster and teams between nine years. 
 
-```{r}
+```{r,include=FALSE}
 # 2021 posterior predictive check ----
 
 pred_tab <-
@@ -357,9 +372,9 @@ PPC_2021 <- bind_rows(pred_tab_long, true_tab_long) %>%
             geom_density(alpha = 0.8, bw = .07) +
             facet_wrap(~factor(rider_name, levels = ordered_levels), scales = "free") +
             xlim(0, 1) +
-            #theme_fira() +
-            #scale_fill_fira() +
-            #theme(legend.position = "top") +
+            theme_fira() +
+            scale_fill_fira() +
+            theme(legend.position = "top") +
             labs(
               title = "Posterior predictive check",
               subtitle = "2021 season",
@@ -367,12 +382,17 @@ PPC_2021 <- bind_rows(pred_tab_long, true_tab_long) %>%
               y = "",
               fill = ""
             )
-
-PPC_2021
 ```
-Note: In the 2021 season riders Dani Pedrosa, Jake Dixon and Gerloff Garrett participated in one race each, so they have been excluded from the posterior predictive check. 
 
 ```{r}
+PPC_2021
+```
+
+
+
+Note: In the 2021 season riders Dani Pedrosa, Jake Dixon and Gerloff Garrett participated in one race each, so they have been excluded from the posterior predictive check. 
+
+```{r,include=FALSE}
 # 2012 posterior predictive check ----
 
 pred_tab <-
@@ -421,9 +441,9 @@ PPC_2012 <- bind_rows(pred_tab_long, true_tab_long) %>%
             geom_density(alpha = 0.8, bw = .07) +
             facet_wrap(~factor(rider_name, levels = ordered_levels), scales = "free") +
             xlim(0, 1) +
-            #theme_fira() +
-            #scale_fill_fira() +
-            #theme(legend.position = "top") +
+            theme_fira() +
+            scale_fill_fira() +
+            theme(legend.position = "top") +
             labs(
               title = "Posterior predictive check",
               subtitle = "2012 season",
@@ -432,33 +452,21 @@ PPC_2012 <- bind_rows(pred_tab_long, true_tab_long) %>%
               fill = ""
             ) +
             scale_colour_brewer(type = "seq", palette = "Spectral")
+```
 
+```{r}
 PPC_2012
 ```
+
 Note: in the 2012 season riders Aaron Yates, Chris Vermeulen, David Salom, Franco Battaini, Hiroshi Aoyama, Steve Rapp & Roberto Rolfo have been excluded since each of them had taken part in one Grand Prix. 
 
 Both the plots show acceptable simulated values for each individual rider. One important thing to note is that for consistent high-performers (ex. Quartararo Fabio - 2021, Lorenzo Jorge - 2012) and low-performers (Salvadori Lorenzo - 2021), the posterior predictive distribution is over-dispersed, indicating a too low value for $\phi$ in these cases. 
 On the other hand, for riders in the midfield (Marquez Alex - 2021, Jonathan Rea - 2012), the posterior predictive distribution seems to be a bit under-dispersed (too high value of $\phi$), since there is more variation in the observed data. 
 But it can be seen that in both cases, the mean estimates do not seem too biased (especially in the midfield) so, we conclude that the model fits the observed data satisfyingly. 
 
-# Model comparison and interpretation of the results
+# Interpretation of the results
 
-```{r}
-loo_results <- loo_compare(
-  fit_basic,
-  fit_year,
-  model_names = c("Driver + constructor", "Driver + constructor + year")
-)
-
-loo_results
-```
-
-Comparing the models, the best one is the model described by drivers, constructors and years. Models are sorted in decreasing order: the first is the best whereas the last is the worst. The difference in ELPD (elpd_diff) between the two models is considerably high, this means that the 2 models have different predictive performance. Moreover, 
-it is notable how taking the year into consideration leads to significantly better results.
-
-## Interpretation of the results
-
-Since the yearly model is better according to the LOO estimate, we proceed our inferences with it. To show yearly deviation for the drivers' performances, we decided to make inferences for a reduced set of riders from the 2012-2021 period (Rossi, Pedrosa, Crutchlow, Quartararo )
+To show yearly deviation for the drivers' performances, we decided to make inferences for a reduced set of riders from the 2012-2021 period (Rossi, Pedrosa, Crutchlow, Quartararo )
 
 The model contains a parameter that indicates the seasonal form for each of the riders, $\beta_{ds}$, so we can project the skill trajectories for each of them throughout the years, while taking into consideration any advantages due to team form or any hidden parameter uncertainties. This is done by obtaining the posterior means and the 95% credible intervals for $\beta_{d} + \beta_{ds}$ on the set of riders, for each year 
 
