@@ -161,7 +161,15 @@ In our case, in a bayesian framework, hierarchical models can model statistical 
 
 For driver d and constructor c , we specify the following generative multilevel model for the proportion of drivers beaten $y_{dc}$:
 
-$$\begin{align*} y_{dc} \sim {\sf Beta}(\mu_{dc},\Phi) \\ logit(\mu_{dc}) = \beta_{d}  + \beta_{c}  \\ \beta_{d} \sim {\mathcal N}(0,\sigma^{2}_{d}) \\  \beta_{c} \sim {\mathcal N}(0,\sigma^{2}_{c}) \\ \sigma_{d} \sim {\mathcal \Gamma}(1,1) \\ \sigma_{c} \sim {\mathcal \Gamma}(1,1) \\ \Phi \sim \Gamma(1,1) \end{align*}$$
+\begin{align*} 
+y_{dc} \sim {\sf Beta}(\mu_{dc},\Phi) \\ 
+logit(\mu_{dc}) = \beta_{d}  + \beta_{c}  \\ 
+\beta_{d} \sim {\mathcal N}(0,\sigma^{2}_{d}) \\  
+\beta_{c} \sim {\mathcal N}(0,\sigma^{2}_{c}) \\ 
+\sigma_{d} \sim {\mathcal \Gamma}(1,1) \\ 
+\sigma_{c} \sim {\mathcal \Gamma}(1,1) \\ 
+\Phi \sim \Gamma(1,1) 
+\end{align*}
 
 The Beta distribution of the model does not follow the standard $(\alpha,\beta)$ parametrization, but rather a Beta regression formulation with a mean parameter $\mu$ and a dispersion parameter $\Phi$ (Ferrari and Cribari-Neto, 2004).
 
@@ -174,7 +182,19 @@ Then, $\beta_{d}$ represents the mean driver skill as a log-odds ratio; e.g., if
 
 Taking into account that the performances of a driver can change over years (e.g. for his age or for his experience), and that also the quality of the motorbike can depends on the season (e.g. for new technologies) $y_{dcs}$:
 
-$$\begin{align*} y_{dcs} \sim {\mathcal Beta}(\mu_{dcs},\Phi) \\ logit(\mu_{dcs}) = \beta_{d} + \beta_{ds} + \beta_{c} + \beta_{cs} \\ \beta_{d} \sim {\mathcal N}(0,\sigma^{2}_{d}) \\ \beta_{ds} \sim {\mathcal N}(0,\sigma^{2}_{ds}) \\ \beta_{c} \sim {\mathcal N}(0,\sigma^{2}_{c}) \\ \beta_{cs} \sim {\mathcal N}(0,\sigma^{2}_{cs}) \\ \sigma_{d} \sim {\mathcal \Gamma}(1,1) \\ \sigma_{ds} \sim {\mathcal \Gamma}(1,1) \\ \sigma_{c} \sim {\mathcal \Gamma}(1,1) \\ \sigma_{cs} \sim {\mathcal \Gamma}(1,1) \\ \Phi \sim \Gamma(1,1) \end{align*}$$
+\begin{align*} 
+y_{dcs} \sim {\mathcal Beta}(\mu_{dcs},\Phi) \\ 
+logit(\mu_{dcs}) = \beta_{d} + \beta_{ds} + \beta_{c} + \beta_{cs} \\ 
+\beta_{d} \sim {\mathcal N}(0,\sigma^{2}_{d}) \\ 
+\beta_{ds} \sim {\mathcal N}(0,\sigma^{2}_{ds}) \\ 
+\beta_{c} \sim {\mathcal N}(0,\sigma^{2}_{c}) \\ 
+\beta_{cs} \sim {\mathcal N}(0,\sigma^{2}_{cs}) \\ 
+\sigma_{d} \sim {\mathcal \Gamma}(1,1) \\ 
+\sigma_{ds} \sim {\mathcal \Gamma}(1,1) \\ 
+\sigma_{c} \sim {\mathcal \Gamma}(1,1) \\ 
+\sigma_{cs} \sim {\mathcal \Gamma}(1,1) \\ 
+\Phi \sim \Gamma(1,1)
+\end{align*}
 
 So here we also included the seasonal driver form parameter $\beta_{ds}$, which represents yearly deviations from the long-term average driver skill and $\beta_{cs}$, which represents yearly deviations from the long-term average constructor advantage.
 
@@ -515,8 +535,6 @@ In the 2021 grid, based on the figure above, it can be inferred that Quartararo 
 
 The reason behind the wide confidence interval with Marc Marquez is due to his injury and how it affected some races in the 2021 season (where he performs much lower than his standards). This combined with the fact that he has a high skill ranking due to producing high-performance results creates this level of uncertainity around his skill level. Indeed, even if the inference is only on the 2021 season $\beta{r}$ takes into account all the seasons. 
 
-**TO ADD TEAM ADVANTAGE + COUNTERFACTUAL FOR QUARTARARO IN ANOTHER TEAM**
-
 To determine how much a given bike from a certain team yields, we can compute the posterior means and the 95% confidence intervals for $\beta_t$ from the model
 
 ```{r}
@@ -572,15 +590,15 @@ plt_advantage_trajectory
 
 
 **(improve this section)**
-Did Quartararo getting into the official Yamaha team (in 2020) boost his prop_trans? To answer that question we put him in Petronas Yamaha SRT (Rossi's team in 2021) and put Rossi in Yamaha's official team, Monster Energy Yamaha MotoGP, Quartararo's team in 2021. Would Valentino Rossi have been able to beat Quartararo? (as an extra note, Rossi was in Yamaha's official team in 2019 and Quartararo was in SRT in 2019).
+Did Quartararo getting into the official Yamaha team (in 2020) boost his performances? To answer this question we put him in Petronas Yamaha SRT (Rossi's team in 2021) and put Rossi in Yamaha's official team, Yamaha MotoGP, Quartararo's team in 2021. Would Valentino Rossi have been able to beat Quartararo? (as an extra note, Rossi was in Yamaha's official team in 2019 and Quartararo was in SRT in 2019).
 
 To answer this question we compute the predicted proportion of riders beaten $\tilde y_{rt}$ for both of the riders and then compute the posterior difference $\delta$ as follows:
 
-$$\begin{align*}
+\begin{align*}
 \tilde{y}_{quart:YMH_{SRT}:2021} &= \text{logit}^{-1}(\beta_{quart} + \beta_{quart:2021} + \beta_{YMH_{SRT}} + \beta_{YMH_{SRT}:2021})
 \\\tilde{y}_{rossi:YMH_{OFF}:2021} &= \text{logit}^{-1}(\beta_{rossi} + \beta_{rossi:2021} + \beta_{YMH_{OFF}} + \beta_{YMH_{OFF}:2021})
 \\ \delta &= \tilde{y}_{quart:YMH_{SRT}:2021} - \tilde{y}_{rossi:YMH_{OFF}:2021}
-\end{align*}$$
+\end{align*}
 
 ```{r}
 rossi_yamaha_offical <- posterior_predict(fit_year, tibble(

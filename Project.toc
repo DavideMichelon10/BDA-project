@@ -1,17 +1,17 @@
 \contentsline {section}{Introduction}{1}{section*.2}%
-\contentsline {section}{Data}{1}{section*.3}%
-\contentsline {subsection}{Data Preparation}{1}{section*.4}%
-\contentsline {subsection}{Some EDA ----}{1}{section*.5}%
-\contentsline {section}{Description of the models}{3}{section*.6}%
-\contentsline {subsection}{Priors}{4}{section*.7}%
-\contentsline {section}{Rhat convergence diagnostics and interpretation}{6}{section*.8}%
-\contentsline {section}{HMC specific convergence diagnostics}{7}{section*.9}%
-\contentsline {section}{Effective sample size diagnostic (n\_eff)}{7}{section*.10}%
-\contentsline {section}{Posterior predictive checking and interpretation}{8}{section*.11}%
-\contentsline {section}{Model comparison and interpretation of the results}{11}{section*.12}%
-\contentsline {subsection}{Interpretation of the results}{12}{section*.13}%
-\contentsline {section}{Predictive performance assessment}{16}{section*.14}%
-\contentsline {section}{Alternative priors testing}{16}{section*.15}%
-\contentsline {section}{Problems and potential improvements}{17}{section*.16}%
-\contentsline {section}{Conclusion}{18}{section*.17}%
-\contentsline {section}{Self-reflection about what the group learned}{18}{section*.18}%
+\contentsline {section}{Data}{2}{section*.3}%
+\contentsline {subsection}{Data Preparation}{2}{section*.4}%
+\contentsline {subsection}{Some EDA}{2}{section*.5}%
+\contentsline {section}{Description of the models}{5}{section*.6}%
+\contentsline {subsection}{Priors}{7}{section*.7}%
+\contentsline {section}{Rhat convergence diagnostics and interpretation}{9}{section*.8}%
+\contentsline {section}{HMC specific convergence diagnostics}{9}{section*.9}%
+\contentsline {section}{Effective sample size diagnostic (n\_eff)}{10}{section*.10}%
+\contentsline {section}{Posterior predictive checking and interpretation}{11}{section*.11}%
+\contentsline {section}{Model comparison and interpretation of the results}{15}{section*.12}%
+\contentsline {subsection}{Interpretation of the results}{16}{section*.13}%
+\contentsline {section}{Predictive performance assessment}{21}{section*.14}%
+\contentsline {section}{Alternative priors testing}{21}{section*.15}%
+\contentsline {section}{Problems and potential improvements}{24}{section*.16}%
+\contentsline {section}{Conclusion}{24}{section*.17}%
+\contentsline {section}{Self-reflection about what the group learned}{24}{section*.18}%
