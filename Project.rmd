@@ -82,7 +82,7 @@ data <- data %>%
                           TRUE ~ as.character(team_name))
   )
 ```
-The variable position_prop represents how many rider_names you beat in a race, the variables position_trans is a transformation: Indeed The documentation for the R betareg package mentions that: "if y also assumes the extremes 0 and 1, a useful transformation in practice is (y * (n−1) + 0.5) / n where n is the sample size".
+The variable position_prop represents how many rider_names you beat in a race, the variables position_trans is a transformation: Indeed The documentation for the R betareg package mentions that: "if y also assumes the extremes 0 and 1, a useful transformation in practice is (y * (n-1) + 0.5) / n where n is the sample size".
 
 (see https://stats.stackexchange.com/a/134297/116878)
 
@@ -142,7 +142,7 @@ spiegare cosa rappresentano i vari beta
 
 For driver d and constructor c , we specify the following generative multilevel model for the proportion of drivers beaten $y_{dc}$:
 
-$\begin{align*} y_{dc} \sim {\sf Beta}(\mu_{dc},\Phi) \\ logit(\mu_{dc}) = \beta_{d}  + \beta_{c}  \\ \beta_{d} \sim {\mathcal N}(0,\sigma^{2}_{d}) \\  \beta_{c} \sim {\mathcal N}(0,\sigma^{2}_{c}) \\ \sigma_{d} \sim {\mathcal \Gamma}(1,1) \\ \sigma_{c} \sim {\mathcal \Gamma}(1,1) \\ \Phi \sim \Gamma(1,1) \end{align*}$
+$$\begin{align*} y_{dc} \sim {\sf Beta}(\mu_{dc},\Phi) \\ logit(\mu_{dc}) = \beta_{d}  + \beta_{c}  \\ \beta_{d} \sim {\mathcal N}(0,\sigma^{2}_{d}) \\  \beta_{c} \sim {\mathcal N}(0,\sigma^{2}_{c}) \\ \sigma_{d} \sim {\mathcal \Gamma}(1,1) \\ \sigma_{c} \sim {\mathcal \Gamma}(1,1) \\ \Phi \sim \Gamma(1,1) \end{align*}$$
 
 The Beta distribution of the model does not follow the standard $(\alpha,\beta)$ parametrization, but rather a Beta regression formulation with a mean parameter $\mu$ and a dispersion parameter $\Phi$ (Ferrari and Cribari-Neto, 2004).
 
@@ -155,9 +155,9 @@ Then, $\beta_{d}$ represents the mean driver skill as a log-odds ratio; e.g., if
 
 Taking into account that the performances of a driver can change over years (e.g. for his age or for his experience), and that also the quality of the motorbike can depends on the season (e.g. for new technologies) $y_{dcs}$:
 
-$\begin{align*} y_{dcs} \sim {\mathcal Beta}(\mu_{dcs},\Phi) \\ logit(\mu_{dcs}) = \beta_{d} + \beta_{ds} + \beta_{c} + \beta_{cs} \\ \beta_{d} \sim {\mathcal N}(0,\sigma^{2}_{d}) \\ \beta_{ds} \sim {\mathcal N}(0,\sigma^{2}_{ds}) \\ \beta_{c} \sim {\mathcal N}(0,\sigma^{2}_{c}) \\ \beta_{cs} \sim {\mathcal N}(0,\sigma^{2}_{cs}) \\ \sigma_{d} \sim {\mathcal \Gamma}(1,1) \\ \sigma_{ds} \sim {\mathcal \Gamma}(1,1) \\ \sigma_{c} \sim {\mathcal \Gamma}(1,1) \\ \sigma_{cs} \sim {\mathcal \Gamma}(1,1) \\ \Phi \sim \Gamma(1,1) \end{align*}$
+$$\begin{align*} y_{dcs} \sim {\mathcal Beta}(\mu_{dcs},\Phi) \\ logit(\mu_{dcs}) = \beta_{d} + \beta_{ds} + \beta_{c} + \beta_{cs} \\ \beta_{d} \sim {\mathcal N}(0,\sigma^{2}_{d}) \\ \beta_{ds} \sim {\mathcal N}(0,\sigma^{2}_{ds}) \\ \beta_{c} \sim {\mathcal N}(0,\sigma^{2}_{c}) \\ \beta_{cs} \sim {\mathcal N}(0,\sigma^{2}_{cs}) \\ \sigma_{d} \sim {\mathcal \Gamma}(1,1) \\ \sigma_{ds} \sim {\mathcal \Gamma}(1,1) \\ \sigma_{c} \sim {\mathcal \Gamma}(1,1) \\ \sigma_{cs} \sim {\mathcal \Gamma}(1,1) \\ \Phi \sim \Gamma(1,1) \end{align*}$$
 
-So here we also included the seasonal driver form parameter βds, which represents yearly deviations from the long-term average driver skill and βcs, which represents yearly deviations from the long-term average constructor advantage.
+So here we also included the seasonal driver form parameter $\beta_{ds}$, which represents yearly deviations from the long-term average driver skill and $\beta_{cs}$, which represents yearly deviations from the long-term average constructor advantage.
 
 ## Priors
 
