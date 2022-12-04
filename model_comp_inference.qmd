@@ -514,7 +514,7 @@ pp_2021_summary <-
   pp_2021 %>%
   as_tibble(.name_repair = "minimal") %>%
   set_names(grid_2021$rider_name) %>%
-  pivot_longer(everything(), names_to = "driver") %>%
+  pivot_longer(everything(), names_to = "rider_name") %>%
   group_by(rider_name) %>%
   summarise(est = mean(value), lower = quantile(value, 0.025), upper = quantile(value, 0.975)) %>%
   left_join(grid_2021) %>%
