@@ -79,6 +79,14 @@ data <- data %>%
     team_name = case_when(team_name == "Movistar Yamaha MotoGP" ~ "Yamaha MotoGP",
                           team_name == "Monster Energy Yamaha MotoGP" ~ "Yamaha MotoGP",
                           team_name == "Yamaha Factory Racing" ~ "Yamaha MotoGP",
+                          team_name == "Ducati Team" ~ "Ducati MotoGP",
+                          team_name == "Mission Winnow Ducati"  ~ "Ducati MotoGP",
+                          team_name == "Ducati Lenovo Team"  ~ "Ducati MotoGP",
+                          team_name == "Repsol Honda Team"  ~ "Honda MotoGP",
+                          team_name == "Team Suzuki MotoGP" ~ "Suzuki MotoGP",
+                          team_name == "Team SUZUKI ECSTAR" ~ "Suzuki MotoGP",
+                          team_name == "Red Bull KTM Factory Racing" ~ "KTM MotoGP",
+                          team_name == "Aprilia Racing Team Gresini" ~ "Aprilia MotoGP"
                           TRUE ~ as.character(team_name))
   )
 ```
