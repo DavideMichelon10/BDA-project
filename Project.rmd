@@ -28,6 +28,7 @@ library(plot.matrix)
 library(insight)
 library(firatheme)
 library(tidyverse)
+library(extrafont)
 
 cmdstanr::check_cmdstan_toolchain(fix = TRUE)
 
@@ -289,16 +290,25 @@ hmc_conv_basic <- mcmc_plot(fit_basic, type = "trace") +
             facet_wrap(~parameter, nrow = 6, scales = "free") +
             scale_colour_brewer(type = "seq", palette = "Spectral")
 
-hmc_conv_basic
+#hmc_conv_basic
 ```
+![](./img/hmc_chains_basic.png){width=50%,height=50%}
+```{r,include=FALSE}
+#ggsave("./img/hmc_chains_basic.png",plot=hmc_conv_basic,width = 10, height = 5)
+```
+
 
 ```{r}
 hmc_conv_year <- mcmc_plot(fit_year, type = "trace") +
             facet_wrap(~parameter, nrow = 6, scales = "free") +
             scale_colour_brewer(type = "seq", palette = "Spectral")
 
-hmc_conv_year
+#hmc_conv_year
 ```
+```{r,include=FALSE}
+#ggsave("./img/hmc_chains_year.png",plot=hmc_conv_year, width = 10, height = 8)
+```
+![](./img/hmc_chains_year.png){width=50%,height=50%}
 
 By visual inspection it can be seen how the chains for the different parameters have converged. 
 
@@ -379,9 +389,9 @@ PPC_2021 <- bind_rows(pred_tab_long, true_tab_long) %>%
             geom_density(alpha = 0.8, bw = .07) +
             facet_wrap(~factor(rider_name, levels = ordered_levels), scales = "free") +
             xlim(0, 1) +
-            theme_fira() +
-            scale_fill_fira() +
-            theme(legend.position = "top") +
+            #theme_fira() +
+            #scale_fill_fira() +
+            #theme(legend.position = "top") +
             labs(
               title = "Posterior predictive check",
               subtitle = "2021 season",
@@ -391,8 +401,9 @@ PPC_2021 <- bind_rows(pred_tab_long, true_tab_long) %>%
             )
 ```
 
-```{r}
-PPC_2021
+![](./img/PPC_2021.png){width=50%,height=50%}
+```{r,include=FALSE}
+ggsave("./img/PPC_2021.png", plot=PPC_2021, width = 10, height = 9)
 ```
 
 
@@ -448,9 +459,9 @@ PPC_2012 <- bind_rows(pred_tab_long, true_tab_long) %>%
             geom_density(alpha = 0.8, bw = .07) +
             facet_wrap(~factor(rider_name, levels = ordered_levels), scales = "free") +
             xlim(0, 1) +
-            theme_fira() +
-            scale_fill_fira() +
-            theme(legend.position = "top") +
+            #theme_fira() +
+            #scale_fill_fira() +
+            #theme(legend.position = "top") +
             labs(
               title = "Posterior predictive check",
               subtitle = "2012 season",
@@ -461,8 +472,10 @@ PPC_2012 <- bind_rows(pred_tab_long, true_tab_long) %>%
             scale_colour_brewer(type = "seq", palette = "Spectral")
 ```
 
-```{r}
-PPC_2012
+![](./img/PPC_2012.png){width=50%,height=50%}
+
+```{r,include=FALSE}
+#ggsave("./img/PPC_2012.png",plot = PPC_2012,width = 10, height = 9)
 ```
 
 Note: in the 2012 season riders Aaron Yates, Chris Vermeulen, David Salom, Franco Battaini, Hiroshi Aoyama, Steve Rapp & Roberto Rolfo have been excluded since each of them had taken part in one Grand Prix. 
@@ -553,7 +566,7 @@ The reason behind the wide confidence interval with Marc Marquez is due to his i
 To determine how much a given bike from a certain team yields, we can compute the posterior means and the 95% confidence intervals for $\beta_t$ from the model
 
 ```{r}
-team_focus <- c("Yamaha MotoGP", "Team SUZUKI ECSTAR", "Repsol Honda Team", "Red Bull KTM Factory Racing", "Aprilia Racing Team Gresini")
+team_focus <- c("Yamaha MotoGP", "Suzuki MotoGP", "Honda MotoGP", "KTM MotoGP", "Aprilia MotoGP")
 
 team_mean <- as_draws_df(fit_year) %>% select(-.chain, -.iteration) %>% select(contains("r_team_name"),.draw) %>% select(-contains("year"))
 team_form <- as_draws_df(fit_year) %>% select(-.chain, -.iteration) %>% select(contains("r_team_name:year"),.draw) 
@@ -588,7 +601,7 @@ plt_advantage_trajectory <-
   team_advantage_summary %>%
   ungroup() %>% 
   filter(Team %in% team_focus) %>%
-  mutate(Team = fct_relevel(Team, "Petronas Yamaha SRT", "Ducati Lenovo Team", "Repsol Honda Team", "Red Bull KTM Factory Racing", "Aprilia Racing Team Gresini")) %>% 
+  mutate(Team = fct_relevel(Team, "Petronas Yamaha SRT", "Ducati MotoGP", "Honda MotoGP", "KTM MotoGP", "Aprilia Racing Team Gresini")) %>% 
   ggplot(aes(x = Year, y = est, ymin = lower, ymax = upper)) +
   geom_ribbon(aes(fill = Team), alpha = .2) +
   geom_line(aes(colour = Team)) +
