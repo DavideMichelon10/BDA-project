@@ -208,7 +208,7 @@ list_drivers = list(y_riders = driver_prop, N = nrow(driver_prop), J_riders = nc
 # fit_driver <- hierarchical_model_d$sample(data = list_drivers, refresh=1000)
 ```
 
-```
+```{r,eval=FALSE}
 prior <- c(
     prior(gamma(1,1), class = sd),
     prior(gamma(1,1), class = phi)
@@ -235,7 +235,7 @@ fit_basic = readRDS("./fit/fit_basic.rds") %>% add_criterion("loo")
 ```
 
 
-```
+```{r,eval=FALSE}
 # year model
 fit_year <- brm(
   formula = prop_trans ~ 0 + (1 | rider_name) + (1 | team_name) + (1 | rider_name:year) + (1|team_name:year),
@@ -706,6 +706,28 @@ Although the model shows satisfactory results, a possible improvement could be t
 Condizioni meteo?
 
 # Conclusion
+
+```{r}
+# Driver versus constructor contributions ----
+# random effects standard deviation summary
+sfit <- summary(fit_year, prob = 0.95)
+ranef_summary <- rbind(
+  "constructor" = sfit$random$team_name,
+  "constructor form" = sfit$random$`team_name:year`,
+  "driver" = sfit$random$rider_name,
+  "driver form" = sfit$random$`rider_name:year`
+)[1:4, 1:4]
+xtable::xtable(ranef_summary)
+
+# how much of variance is due to car?
+colSums(ranef_summary[1:2,]^2)/colSums(ranef_summary^2)
+
+# and how much due to the driver?
+colSums(ranef_summary[3:4,]^2)/colSums(ranef_summary^2)
+```
+From the table above, and from previous analysis, we can observe that in MotoGP the driver skill is more influent than the motorcycle on the result of a race.
+
+
 
 # Self-reflection about what the group learned 
 
