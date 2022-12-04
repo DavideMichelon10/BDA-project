@@ -291,7 +291,6 @@ hmc_conv_basic <- mcmc_plot(fit_basic, type = "trace") +
             facet_wrap(~parameter, nrow = 6, scales = "free") +
             scale_colour_brewer(type = "seq", palette = "Spectral")
 
-#hmc_conv_basic
 ```
 ![](./img/hmc_chains_basic.png){width=50%,height=50%}
 ```{r,include=FALSE}
@@ -303,9 +302,8 @@ hmc_conv_basic <- mcmc_plot(fit_basic, type = "trace") +
 hmc_conv_year <- mcmc_plot(fit_year, type = "trace") +
             facet_wrap(~parameter, nrow = 6, scales = "free") +
             scale_colour_brewer(type = "seq", palette = "Spectral")
-
-#hmc_conv_year
 ```
+
 ```{r,include=FALSE}
 #ggsave("./img/hmc_chains_year.png",plot=hmc_conv_year, width = 10, height = 8)
 ```
@@ -315,9 +313,9 @@ By visual inspection it can be seen how the chains for the different parameters 
 
 # Effective sample size diagnostic (n_eff)
 
-```{r}
-summary(fit_basic)
-summary(fit_year)
+```{r,include=FALSE}
+#summary(fit_basic)
+#summary(fit_year)
 ```
 The Effective sample sizes are calculated via the `ess_bulk` and `ess_tail` function. The `ess_bulk` function produces an estimated Bulk Effective Sample Size (bulk-ESS) using rank normalized draws whereas the `ess_tail` function produces an estimated Tail Effective Sample Size (tail-ESS) by computing the minimum of effective sample sizes for 5% and 95% quantiles.
 For each parameter, both Bulk-ESS and Tail-ESS are bigger than 100 (approximately) per Markov Chain which means that they are reliable and indicate that estimates of respective posterior quantiles are reliable.
@@ -334,8 +332,7 @@ sd_t_n <- extract_variable_matrix(draws_temp,"sd_team_name__Intercept")
 ess_basic <- data.frame(Parameter = c("rider_name", "team_name"), 
                  ESS_bulk = c(ess_bulk(sd_r_n), ess_bulk(sd_t_n)),
                  ESS_tail = c(ess_tail(sd_r_n), ess_tail(sd_t_n)))
-kable(ess_basic, col.names = c("Parameter", "ESS_bulk","ESS_tail"), escape = F, caption = "Basic Model") %>%
-                    kable_styling(latex_options = "hold_position")
+ess_basic
 ```
 
 
@@ -351,8 +348,7 @@ sd_t_n_y <- extract_variable_matrix(draws_temp,"sd_team_name:year__Intercept")
 ess_year <- data.frame(Parameter = c("rider_name", "rider_name:year","team_name", "team_name:year"), 
                  ESS_bulk = c(ess_bulk(sd_r_n), ess_bulk(sd_r_n_y), ess_bulk(sd_t_n), ess_bulk(sd_t_n_y)),
                  ESS_tail = c(ess_tail(sd_r_n), ess_tail(sd_r_n_y), ess_tail(sd_t_n), ess_tail(sd_t_n_y)))
-kable(ess_year, col.names = c("Parameter", "ESS_bulk", "ESS_tail"), escape = F, caption = "Yearly Model") %>%
-                    kable_styling(latex_options = "hold_position")
+ess_year
 ```
 
 
@@ -534,7 +530,7 @@ rider_mean <- as_draws_df(fit_year) %>% select(-.chain, -.iteration) %>% select(
 rider_form <- as_draws_df(fit_year) %>% select(-.chain,-.iteration) %>% select(contains("r_rider_name:year"),.draw)
 ```
 
-```{r}
+```{r,include=FALSE}
 rider_mean_long <-
   rider_mean  %>%
   pivot_longer(-.draw, names_to = "Rider", values_to = "Skill",
@@ -573,14 +569,16 @@ plt_skill_trajectory <-
   facet_wrap(~Rider) +
   labs(x = "Season", y = "Skill (log odds ratio)", title = "MotoGP Rider skill trajectories",
        subtitle = "period (2012-2021) Rider skill,\nconsidering for yearly team advantage.")
+```
 
 
+```{r}
 plt_skill_trajectory
 ```
 The figure shows slight deviations in skills during the seasons, in particular drivers' performances may decrease as they get older.
 
 A ranking based on skill can also be produced, by focusing on a single year, which is useful to produce on the latest year available in the dataset (2021)
-```{r}
+```{r,include=FALSE}
 plt_rider_skill_2021 <-
   rider_skill_summary %>%
   ungroup() %>%
@@ -593,7 +591,10 @@ plt_rider_skill_2021 <-
        subtitle = "Accounting for yearly team advantage.",
        x = "Skill (log odds ratio)",
        y = "Rider")
+```
 
+
+```{r}
 plt_rider_skill_2021
 ```
 
@@ -603,7 +604,7 @@ The reason behind the wide confidence interval with Marc Marquez is due to his i
 
 To determine how much a given bike from a certain team yields, we can compute the posterior means and the 95% confidence intervals for $\beta_t$ from the model
 
-```{r}
+```{r,include=FALSE}
 team_focus <- c("Yamaha MotoGP", "Suzuki MotoGP", "Honda MotoGP", "KTM MotoGP", "Aprilia MotoGP")
 
 team_mean <- as_draws_df(fit_year) %>% select(-.chain, -.iteration) %>% select(contains("r_team_name"),.draw) %>% select(-contains("year"))
@@ -650,7 +651,10 @@ plt_advantage_trajectory <-
   facet_wrap(~Team) +
   labs(x = "Season", y = "Advantage (log odds ratio)", title = "MotoGP team advantage trajectories",
        subtitle = "Period (2012-2021) constructor advantage,\naccounting for yearly rider skill.")
+```
 
+
+```{r}
 plt_advantage_trajectory
 ```
 
@@ -729,9 +733,24 @@ any(rhats[!is.nan(rhats)] > 1.01)
 ```
 The model has some rhat values grater than 1.01.
 
-```{r}
-# codice bulk
+
+```{r,include=FALSE}
+draws_temp <- as_draws_df(fit_year2)
+sd_r_n <- extract_variable_matrix(draws_temp,"sd_rider_name__Intercept")
+sd_r_n_y <- extract_variable_matrix(draws_temp,"sd_rider_name:year__Intercept")
+sd_t_n <- extract_variable_matrix(draws_temp,"sd_team_name__Intercept")
+sd_t_n_y <- extract_variable_matrix(draws_temp,"sd_team_name:year__Intercept")
 ```
+
+```{r}
+ess_year_2 <- data.frame(Parameter = c("rider_name", "rider_name:year","team_name", "team_name:year"), 
+                 ESS_bulk = c(ess_bulk(sd_r_n), ess_bulk(sd_r_n_y), ess_bulk(sd_t_n), ess_bulk(sd_t_n_y)),
+                 ESS_tail = c(ess_tail(sd_r_n), ess_tail(sd_r_n_y), ess_tail(sd_t_n), ess_tail(sd_t_n_y)))
+
+ess_year_2
+```
+
+
 
 There are some bulk_ess smaller than 100.
 
