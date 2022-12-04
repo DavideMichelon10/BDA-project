@@ -36,7 +36,9 @@ cmdstanr::check_cmdstan_toolchain(fix = TRUE)
 
 
 # Introduction
-Nowadays, given the enormous amount of data that is generated,  it is essential to be able to perform precise analyzes in order to have an important advantage over competitors. In particular, data analysis is proving increasingly important in the world of sport and currently most of high-level teams rely on data scientists. In this report, we will focus on the MotoGP sport which is the premier class of motorcycle road racing events held on road circuits. Using a public data-set of the MotoGP results from 2012 to 2021, we designed two different models to describe how  drivers and constructions can affect the result of the final world champion. We were curious to understand what is more relevant between drivers and construction teams and whether the chances of final victory for ordinary drivers with first-class teams are higher than normal teams with champion drivers. The first model takes into account only the drivers and construction teams but the results were not satisfactory. Indeed, we found out that the performance of the motorbikes differ according to the technological development and the same motorbike can have opposite performances from year to year. That said, in the second model we introduced the year variable and thus the results have improved significantly.
+Nowadays, given the enormous amount of data that is generated,  it is essential to be able to perform precise analyzes in order to have an important advantage over competitors. In particular, data analysis is proving increasingly important in the world of sport and currently most of high-level teams rely on data scientists. 
+In this report, we will focus on the MotoGP sport which is the premier class of motorcycle road racing events held on road circuits. Using a public data-set of the MotoGP results from 2012 to 2021, we designed two different models to describe how drivers' ability and motorcycle's quality can affect the result of the final world champion. 
+We were curious to understand what is more relevant between drivers and construction teams and whether the chances of final victory for ordinary drivers with first-class teams are higher than normal teams with champion drivers. The first model takes into account only the drivers and construction teams but the results were not satisfactory. Indeed, we found out that the performance of the motorbikes differ according to the technological development and the same motorbike can have opposite performances from year to year. That said, in the second model we introduced the year variable and thus the results have improved significantly.
 
 
 # Data
@@ -49,7 +51,7 @@ The dataset used is public on the website at this [link](https://observablehq.co
 
 ## Data Preparation
 
-## Some EDA ----
+## Some EDA 
 
 ```{r}
 data = read.csv("./data/race_results_view.csv")
@@ -86,7 +88,7 @@ data <- data %>%
                           team_name == "Team Suzuki MotoGP" ~ "Suzuki MotoGP",
                           team_name == "Team SUZUKI ECSTAR" ~ "Suzuki MotoGP",
                           team_name == "Red Bull KTM Factory Racing" ~ "KTM MotoGP",
-                          team_name == "Aprilia Racing Team Gresini" ~ "Aprilia MotoGP"
+                          team_name == "Aprilia Racing Team Gresini" ~ "Aprilia MotoGP",
                           TRUE ~ as.character(team_name))
   )
 ```
@@ -108,7 +110,7 @@ ggplot(data, aes(x = factor(position))) +
     y = "Count"
   )
 ```
-
+This plot shows that sometimes not all drivers manage to finish the race.
 
 ```{r}
 data %>%
@@ -126,7 +128,8 @@ data %>%
   theme(legend.position = "top") +
   facet_wrap(~year)
 ```
-Dire che non tutti i piloti sono sempre presenti (alcuni si ritirano, altri arrivano dopo)
+
+From the plot above, we can observe that many pilots are not always present: indeed some pilots retired before 2021, some others arrived later than 2012.
 
 ```{r}
 data %>%
@@ -143,10 +146,18 @@ data %>%
   theme(legend.position = "top", axis.text.x = element_text(angle = 45, vjust = 0.85)) +
   facet_wrap(~year)
 ```
+From the plot above we can see an interesting trend for the driver Marc Marquez : till 2019 he was one of the top drivers in MotoGP, than in 2020 he had a shoulder injury that made him skip almost every race, and in 2021 he had a considerable decline in his performances.
 
 # Description of the models
 
-spiegare cosa rappresentano i vari beta
+As already said in the introduction, our goal is to find the influence of the drivers' skills and motorcycle's qualities on the final position of a race: to do that we add a new source of variation in the model for every group.
+So we have the standard deviation of the residuals $\sigma_{e}$ and the standard deviations of the by-group varying intercepts $\sigma_{group}$.
+
+This is a common strategy in a frequentist framework, to go beyond the restrictive hypothesis of a traditional linear model that assumes independent and normally distributed observations with constant variance (homoscedasticity of the residuals).
+
+Instead of rewriting the covariance matrix of the model, to allow heteroscedasticity and dependence, we add a new term that enables the estimation of the group level effect and the modelling of the dependence between observations driven by assumptions on between groups variability.
+
+In our case, in a bayesian framework, hierarchical models can model statistical phenomena that occur on different levels by fitting models that include both constant and varying effects, using hyperprior parameters.
 
 For driver d and constructor c , we specify the following generative multilevel model for the proportion of drivers beaten $y_{dc}$:
 
@@ -170,7 +181,7 @@ So here we also included the seasonal driver form parameter $\beta_{ds}$, which 
 ## Priors
 
 We choose a weakly informative for the $\Phi$ parameters and weakly informative hyperpriors for the $\sigma$ parameters in both the models.
-Indeed a $\Gamma(1,1)$ is a common choice, since it is a distribution that starting from 0 start decreasing with a "Gaussian like trend": it behaves similar to the right tail of a Gaussian or a Cauchy centered in 0.  
+Indeed a $\Gamma(1,1)$ is a common choice, since it is a distribution that starting from 0 start decreasing with a "Gaussian like trend": it behaves similar to the right tail of a Gaussian or a Cauchy distribution centered in 0.  
 
 ```
 list_drivers = list(y_riders = driver_prop, N = nrow(driver_prop), J_riders = ncol(driver_prop))
@@ -262,6 +273,7 @@ hmc_conv <- mcmc_plot(fit_year, type = "trace") +
 
 hmc_conv
 ```
+
 By visual inspection it can be seen how the chains for the different parameters have converged. 
 
 
@@ -273,8 +285,6 @@ summary(fit_year)
 ```
 The ess_bulk function produces an estimated Bulk Effective Sample Size (bulk-ESS) using rank normalized draws whereas the ess_tail function produces an estimated Tail Effective Sample Size (tail-ESS) by computing the minimum of effective sample sizes for 5% and 95% quantiles.
 For each parameter, both Bulk-ESS and Tail-ESS are bigger than 100 (approximately) per Markov Chain which means that they are reliable and indicate that estimates of respective posterior quantiles are reliable.
-
-
 
 # Posterior predictive checking and interpretation 
 
@@ -407,8 +417,8 @@ PPC_2012
 ```
 Note: in the 2012 season riders Aaron Yates, Chris Vermeulen, David Salom, Franco Battaini, Hiroshi Aoyama, Steve Rapp & Roberto Rolfo have been excluded since each of them had taken part in one Grand Prix. 
 
-Both the plots show acceptable simulated values for each individual rider. One important thing to note is that for consistent high-performers (ex. Quartararo Fabio - 2021, Lorenzo Jorge - 2012) and low-performers (Salvadori Lorenzo - 2021), the posterior predictive distribution is under-dispersed, indicating a high value for $\phi$ in these cases. 
-On the other hand, for riders in the midfield (Marquez Alex - 2021, Jonathan Rea - 2012), the posterior predictive distribution seems to be a bit over-dispersed (low value of $\phi$), since there is more variation in the observed data. 
+Both the plots show acceptable simulated values for each individual rider. One important thing to note is that for consistent high-performers (ex. Quartararo Fabio - 2021, Lorenzo Jorge - 2012) and low-performers (Salvadori Lorenzo - 2021), the posterior predictive distribution is over-dispersed, indicating a too low value for $\phi$ in these cases. 
+On the other hand, for riders in the midfield (Marquez Alex - 2021, Jonathan Rea - 2012), the posterior predictive distribution seems to be a bit under-dispersed (too high value of $\phi$), since there is more variation in the observed data. 
 But it can be seen that in both cases, the mean estimates do not seem too biased (especially in the midfield) so, we conclude that the model fits the observed data satisfyingly. 
 
 # Model comparison and interpretation of the results
@@ -428,9 +438,9 @@ it is notable how taking the year into consideration leads to significantly bett
 
 ## Interpretation of the results
 
-Since the yearly model is better according to the LOO estimate, we proceed our inferences with it. To determine which rider is the most skilled, we decided to make inferences for a reduced set of riders from the 2012-2021 period (Rossi, Pedrosa, Crutchlow, Quartararo )
+Since the yearly model is better according to the LOO estimate, we proceed our inferences with it. To show yearly deviation for the drivers' performances, we decided to make inferences for a reduced set of riders from the 2012-2021 period (Rossi, Pedrosa, Crutchlow, Quartararo )
 
-The model contains a parameter that indicates the seasonal form for each of the riders, $\beta_{rs}$, so we can project the skill trajectories for each of them throughout the years, while taking into consideration any advantages due to team form or any hidden parameter uncertainties. This is done by obtaining the posterior means and the 95% credible intervals for $\beta_{r} + \beta_{rs}$ on the set of riders, for each year 
+The model contains a parameter that indicates the seasonal form for each of the riders, $\beta_{ds}$, so we can project the skill trajectories for each of them throughout the years, while taking into consideration any advantages due to team form or any hidden parameter uncertainties. This is done by obtaining the posterior means and the 95% credible intervals for $\beta_{d} + \beta_{ds}$ on the set of riders, for each year 
 
 ```{r}
 riders_focus <- c("Rossi","Crutchlow","Quartararo","Dovizioso")
@@ -481,7 +491,7 @@ plt_skill_trajectory <-
 
 plt_skill_trajectory
 ```
-The figure shows slight deviations in skills during the seasons, continue...
+The figure shows slight deviations in skills during the seasons, in particular drivers' performances may decrease as they get older.
 
 A ranking based on skill can also be produced, by focusing on a single year, which is useful to produce on the latest year available in the dataset (2021)
 ```{r}
@@ -502,7 +512,8 @@ plt_rider_skill_2021
 ```
 
 In the 2021 grid, based on the figure above, it can be inferred that Quartararo is one of the most skilled drivers.
-The reason behind the wide confidence interval with Marc Marquez is due to him missing the 2020 season (1 start), and some races in the 2021 season. This combined with the fact that he has a high skill ranking due to producing high-performance results creates this level of uncertainity around his skill level. (Even if the inference is only on the 2021 season $\beta{r}$ takes into account all the seasons (? check)). 
+
+The reason behind the wide confidence interval with Marc Marquez is due to his injury and how it affected some races in the 2021 season (where he performs much lower than his standards). This combined with the fact that he has a high skill ranking due to producing high-performance results creates this level of uncertainity around his skill level. Indeed, even if the inference is only on the 2021 season $\beta{r}$ takes into account all the seasons. 
 
 **TO ADD TEAM ADVANTAGE + COUNTERFACTUAL FOR QUARTARARO IN ANOTHER TEAM**
 

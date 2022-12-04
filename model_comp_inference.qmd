@@ -478,3 +478,53 @@ save(driver_prop,file="driver_prop.Rda")
 ```
 
 
+
+## Conclusion
+
+```{r}
+# Driver versus constructor contributions ----
+# random effects standard deviation summary
+sfit <- summary(fit_year, prob = 0.95)
+ranef_summary <- rbind(
+  "constructor" = sfit$random$team_name,
+  "constructor form" = sfit$random$`team_name:year`,
+  "driver" = sfit$random$rider_name,
+  "driver form" = sfit$random$`rider_name:year`
+)[1:4, 1:4]
+xtable::xtable(ranef_summary)
+
+# how much of variance is due to car?
+colSums(ranef_summary[1:2,]^2)/colSums(ranef_summary^2)
+
+# and how much due to the driver?
+colSums(ranef_summary[3:4,]^2)/colSums(ranef_summary^2)
+
+
+
+# Overall performance in 2021 ----
+grid_2021 <-
+  data %>%
+  filter(year == 2021) %>% # kubica only did one race, driver != "kubica"
+  select(rider_name, team_name, year) %>%
+  distinct() %>%
+  arrange(team_name)
+
+pp_2021 <- posterior_predict(fit_year, grid_2021)
+pp_2021_summary <-
+  pp_2021 %>%
+  as_tibble(.name_repair = "minimal") %>%
+  set_names(grid_2021$rider_name) %>%
+  pivot_longer(everything(), names_to = "driver") %>%
+  group_by(rider_name) %>%
+  summarise(est = mean(value), lower = quantile(value, 0.025), upper = quantile(value, 0.975)) %>%
+  left_join(grid_2021) %>%
+  select(rider_name, team_name, performance = est, lower, upper) %>%
+  arrange(-performance)
+
+xtable::xtable(pp_2021_summary, digits = 3)
+
+ggsave("img/plt_performance_2021.png", width = 6, height = 9, bg = "white")
+
+```
+
+
