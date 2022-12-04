@@ -703,7 +703,7 @@ This could answer the question: did Yamaha  make a good choice by moving Quartar
 
 We tried to change the parameters of the $\Gamma$ distribution, using a distribution with a shorter support, so more informative
 
-```
+```{r,eval=FALSE}
 prior2 <- c(
     prior(gamma(0.01,0.01), class = sd),
     prior(gamma(0.01,0.01), class = phi)
@@ -725,15 +725,22 @@ fit_year2 <- brm(
 
 ```{r}
 fit_year2 <- read_rds("./fit/fit_year2.rds")
-summary(fit_year2)
+rhats = rhat(fit_year2)
+any(rhats[!is.nan(rhats)] > 1.01)
+```
+The model has some rhat values grater than 1.01.
+
+```{r}
+# codice bulk
 ```
 
+There are some bulk_ess smaller than 100.
 
-We can see that also with a smaller support, the results are almost the same
+We can see that with a smaller support, the results are much different, and that in particular our estimates are not reliable.
 
 We then tried to use the standard priors in brms, that are showed in the output:
 
-```
+```{r,eval=FALSE}
 fit_year3 <- brm(
   formula = prop_trans ~ 0 + (1 | rider_name) + (1 | rider_name:year) + (1 | team_name)  + (1|team_name:year),
   family  = Beta(),
@@ -744,16 +751,26 @@ fit_year3 <- brm(
   warmup  = 1000,
   iter    = 3500
 )
-
-prior_summary(fit_year3)
 ```
 
 ```{r}
-fit_year3 <- read_rds("./fit/fit_year3.rds")
-summary(fit_year3)
+fit_year3 <- read_rds("./fit/fit_year3.rds") %>% add_criterion("loo")
+prior_summary(fit_year3)
 ```
 
-Also in this case, the changes are negligible
+These are the priors used by brms
+
+```{r}
+loo_results <- loo_compare(
+  fit_year3,
+  fit_year,
+  model_names = c("standard", "Our priors")
+)
+
+loo_results
+```
+
+In this case, the changes are negligible, as we can se from the comparison
 
 # Problems and potential improvements
 During the project, we encountered some problems. The first issue was finding an idea and a reliable data set. After that, the initial idea was to use Stan with the data in the form of a matrix of observations and drivers However, this approach would have created multiple null entries (NA values) which are hard to handle using Stan. Therefore, we decided to switch to the brms library, which handles null entries automatically. The main difficulty was figuring out how to choose priors, in particular, how to define hyper-parameters. Moreover, defining priors in brms has been challenging and it took some time.
@@ -767,17 +784,8 @@ We could also have extended the year model adding a predictor that takes into ac
 
 ```{r}
 # Driver versus constructor contributions ----
-# random effects standard deviation summary
-sfit <- summary(fit_year, prob = 0.95)
-ranef_summary <- rbind(
-  "constructor" = sfit$random$team_name,
-  "constructor form" = sfit$random$`team_name:year`,
-  "driver" = sfit$random$rider_name,
-  "driver form" = sfit$random$`rider_name:year`
-)[1:4, 1:4]
-xtable::xtable(ranef_summary)
 
-# how much of variance is due to car?
+# how much of variance is due to motorcycle?
 colSums(ranef_summary[1:2,]^2)/colSums(ranef_summary^2)
 
 # and how much due to the driver?
