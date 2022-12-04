@@ -285,15 +285,22 @@ A rule of thumb is that if $\hat{R}$ < 1.01 we don't need to increase the number
 The HMC chains convergence can be determined by plotting the individual chains that have been executed for the main model parameters 
 
 ```{r}
-hmc_conv <- mcmc_plot(fit_year, type = "trace") +
+hmc_conv_basic <- mcmc_plot(fit_basic, type = "trace") +
             facet_wrap(~parameter, nrow = 6, scales = "free") +
             scale_colour_brewer(type = "seq", palette = "Spectral")
 
-hmc_conv
+hmc_conv_basic
+```
+
+```{r}
+hmc_conv_year <- mcmc_plot(fit_year, type = "trace") +
+            facet_wrap(~parameter, nrow = 6, scales = "free") +
+            scale_colour_brewer(type = "seq", palette = "Spectral")
+
+hmc_conv_year
 ```
 
 By visual inspection it can be seen how the chains for the different parameters have converged. 
-
 
 # Effective sample size diagnostic (n_eff)
 
