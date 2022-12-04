@@ -723,7 +723,7 @@ During the project, we encountered some problems. The first issue was finding an
 
 Although the model shows satisfactory results, a possible improvement could be to add more variables to the model. For example, a more in-depth analysis could be performed on the circuits, understanding which ones have common characteristics (e.g. circuits with many turns vs circuits with long straights) so as to be able to understand which are the weaknesses of motorbikes or riders and therefore where they should focus to improve.
 
-Condizioni meteo?
+We could also have extended the year model adding a predictor that takes into account if the race is wet: wet races require a specific set of skills, which rely less on the motorcycle and more on the driver.
 
 # Conclusion
 
@@ -747,7 +747,7 @@ colSums(ranef_summary[3:4,]^2)/colSums(ranef_summary^2)
 ```
 From the table above, and from previous analysis, we can observe that in MotoGP the driver skill is more influent than the motorcycle on the result of a race.
 
-
+To conclude, in this report, we have familiarized and applied Bayesian logic. We have chosen a field of application in which Bayesian analysis is proving to be of vital importance and in which all companies in the sector are investing  large sums of money, we have chosen to focus on MotoGP sport. Using a public dataset of MotoGP results from 2012 to 2021, we designed two different models to describe how the skill of the riders and the quality of the motorbike can influence the result of the final World Champion. After performing some data-cleaning processes, we created a baseline model taking into account only drivers and constructions team. However, the performances of a driver can change over years and also the quality of the motorbike can depends on the season. For these reasons, we found out that the most reliable model is the one in which the yearly deviations from the long-term average driver skill and  yearly deviations from the long-term average constructor advantage are included. Although, our predicted final ranking is not the same as the real one, we can proudly say that the top 4 were predicted correctly and except some small errors in the final parts of the ranking, there was a satisfactory result there too. Finally, with the aim of understanding whether the motorbike or the rider was more important, we tried to move the most-skilled rider to a motorbike with average performance such as the Yamaha SRT. And, although the uncertainty is significant, it turns out that a top rider (Quartararo) on a medium-skilled motorbike is better than a medium-driver (Rossi) on a outperforming motorbike (Yamaha Official).
 
 # Self-reflection about what the group learned 
 
